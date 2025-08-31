@@ -2,7 +2,7 @@ import { useGeminiAI } from "@/hooks/useGeminiAI";
 import { useImageEditing } from "@/hooks/useImageEditing";
 import * as ImagePicker from "expo-image-picker";
 import React, { useState } from "react";
-import { Alert, ScrollView, Text, View } from "react-native";
+import { Alert, Text, View } from "react-native";
 import MainScreen from "./MainScreen";
 import QuickEditScreen from "./QuickEditScreen";
 
@@ -89,8 +89,11 @@ const App = () => {
     console.log("Quick Edit pressed - opening image picker");
     pickImage((asset) => {
       console.log("Image picked:", asset);
+      console.log("Image URI:", asset.uri);
+      console.log("Setting quickEditImage and switching to quickEdit view");
       setQuickEditImage(asset);
       setCurrentView("quickEdit");
+      console.log("State updated - currentView should be 'quickEdit'");
     });
   };
 
@@ -172,7 +175,7 @@ const App = () => {
   };
 
   return (
-    <ScrollView className="bg-black">
+    <View className="flex-1 bg-black">
       {isLoading && (
         <View className="absolute inset-0 bg-black/70 flex justify-center items-center z-50">
           <Text className="text-white text-lg">Generating...</Text>
@@ -196,7 +199,7 @@ const App = () => {
           isLoading={isLoading}
         />
       )}
-    </ScrollView>
+    </View>
   );
 };
 

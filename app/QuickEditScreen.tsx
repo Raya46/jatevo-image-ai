@@ -1,6 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import React, { useState } from "react";
-import { Image, Text, TextInput, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  Image,
+  SafeAreaView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 interface ImageAsset {
   uri: string;
@@ -25,11 +34,13 @@ const QuickEditScreen: React.FC<QuickEditScreenProps> = ({
   isLoading,
 }) => {
   const [activeTab, setActiveTab] = useState<
-    "combine" | "retouch" | "crop" | "adjust" | "filters"
+    "combine" | "retouch" | "crop" | "adjust" | "filters" | "image-to-image"
   >("retouch");
 
   // Debug logging
+  console.log("QuickEditScreen rendered");
   console.log("QuickEditScreen - quickEditImage:", quickEditImage);
+  console.log("QuickEditScreen - quickEditImage URI:", quickEditImage?.uri);
 
   const tabs = [
     { id: "combine" as const, label: "Combine", icon: "layers" },
@@ -82,7 +93,20 @@ const QuickEditScreen: React.FC<QuickEditScreenProps> = ({
   };
 
   return (
-    <View className="flex-1 flex-col bg-black">
+    <SafeAreaView className="flex-1 flex-col bg-black">
+      {/* Header with Back Button */}
+      <View className="bg-zinc-900 border-b border-zinc-700 px-4 py-3">
+        <View className="flex-row items-center">
+          <TouchableOpacity
+            onPress={onBackToHome}
+            className="flex-row items-center mr-4"
+          >
+            <Ionicons name="arrow-back" size={24} color="white" />
+            <Text className="text-white ml-2 font-semibold">Back</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
       {/* Top Tabs Row */}
       <View className="bg-zinc-900 border-b border-zinc-700">
         <View className="flex-row justify-around pt-3 pb-3">
@@ -113,13 +137,16 @@ const QuickEditScreen: React.FC<QuickEditScreenProps> = ({
       <View className="flex-1 flex justify-center items-center bg-zinc-900 relative">
         {quickEditImage ? (
           <>
+            {console.log("Rendering image with URI:", quickEditImage.uri)}
             <Image
               source={{ uri: quickEditImage.uri }}
               className="w-full h-full"
               resizeMode="contain"
-              style={{ flex: 1 }}
+              style={{ flex: 1, width: "100%", height: "100%" }}
+              onLoad={() => console.log("Image loaded successfully")}
               onError={(error) => {
                 console.error("Image load error:", error);
+                console.error("Failed URI:", quickEditImage.uri);
               }}
             />
             {/* Re-select image button */}
@@ -175,7 +202,7 @@ const QuickEditScreen: React.FC<QuickEditScreenProps> = ({
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -186,10 +213,45 @@ const CombineTab: React.FC<{
   const [images, setImages] = useState<ImageAsset[]>([]);
   const [prompt, setPrompt] = useState("");
 
+  const pickImage = async () => {
+    try {
+      // Request permissions
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission needed",
+          "Please grant permission to access your photos"
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 1,
+      });
+
+      if (!result.canceled) {
+        const asset = {
+          uri: result.assets[0].uri,
+          base64: null,
+        };
+        setImages((prev) => [...prev, asset]);
+      }
+    } catch (error) {
+      console.error("Error picking image:", error);
+      Alert.alert("Error", "Failed to pick image");
+    }
+  };
+
   const handleUpload = () => {
     if (images.length >= 5) return;
-    // This will be handled by the parent component
-    console.log("Upload image clicked");
+    pickImage();
+  };
+
+  const removeImage = (index: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -199,12 +261,37 @@ const CombineTab: React.FC<{
       <Text className="text-zinc-300 mb-2">
         {images.length}/5 images uploaded
       </Text>
-      <TouchableOpacity
-        onPress={handleUpload}
-        className="bg-zinc-800 border-2 border-dashed border-zinc-600 rounded-lg h-16 w-full flex justify-center items-center mb-2"
-      >
-        <Ionicons name="cloud-upload" size={24} color="white" />
-      </TouchableOpacity>
+
+      {/* Upload Card and Previews */}
+      <View className="flex-row flex-wrap mb-2">
+        {/* Upload Card */}
+        {images.length < 5 && (
+          <TouchableOpacity
+            onPress={handleUpload}
+            className="bg-zinc-800 border-2 border-dashed border-zinc-600 rounded-lg h-16 w-16 flex justify-center items-center mr-2 mb-2"
+          >
+            <Ionicons name="cloud-upload" size={20} color="white" />
+          </TouchableOpacity>
+        )}
+
+        {/* Image Previews */}
+        {images.map((image, index) => (
+          <View key={index} className="relative mr-2 mb-2">
+            <Image
+              source={{ uri: image.uri }}
+              className="w-16 h-16 rounded-lg"
+              resizeMode="cover"
+            />
+            <TouchableOpacity
+              onPress={() => removeImage(index)}
+              className="absolute -top-1 -right-1 bg-red-500 rounded-full w-5 h-5 flex justify-center items-center"
+            >
+              <Ionicons name="close" size={12} color="white" />
+            </TouchableOpacity>
+          </View>
+        ))}
+      </View>
+
       <TextInput
         placeholder="Describe the combination..."
         className="bg-zinc-800 text-white rounded-lg p-3 w-full text-base mb-2"
@@ -214,7 +301,7 @@ const CombineTab: React.FC<{
       />
       <TouchableOpacity
         onPress={() => onGenerate(prompt, images)}
-        disabled={isLoading}
+        disabled={isLoading || images.length === 0}
         className="bg-purple-600 rounded-lg p-3 w-full items-center"
       >
         <Text className="text-white font-bold">

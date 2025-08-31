@@ -42,6 +42,52 @@ To learn more about developing your project with Expo, look at the following res
 - [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
 - [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
 
+## 🤖 JATEVO AI Features
+
+This app integrates with **Google Gemini 2.5 Flash Image Preview** for AI-powered image generation and editing.
+
+### 🚨 Handling API Quota Limits (429 Errors)
+
+Google Gemini API has rate limits for the free tier:
+
+- **50 requests per day** per project per model
+- **10 requests per minute** per project per model
+- **32,768 input tokens per minute** per project per model
+
+#### Solutions for Quota Exceeded:
+
+**1. Enable Mock Mode (Development)**
+
+```env
+# .env file
+EXPO_PUBLIC_USE_MOCK_MODE=true
+```
+
+**Mock Mode Features:**
+
+- ✅ Generate random images without API calls
+- ✅ Simulate loading delays (2 seconds)
+- ✅ Test UI/UX without hitting quota limits
+- ✅ Perfect for development & testing
+
+**2. Upgrade to Paid Plan**
+
+- Visit [Google AI Studio Billing](https://ai.google.dev/gemini-api/docs/billing)
+- Choose a paid plan based on your needs
+- Get higher quota limits
+
+**3. Wait for Reset**
+
+- Free tier quota resets daily at 00:00 UTC
+- Wait 24 hours for automatic quota reset
+
+#### Error Handling Features:
+
+- ✅ **Automatic Retry Logic**: Retry with exponential backoff (up to 3 attempts)
+- ✅ **Smart Error Detection**: Detects 429 RESOURCE_EXHAUSTED errors
+- ✅ **User-Friendly Messages**: Clear error messages with helpful links
+- ✅ **Graceful Degradation**: Mock mode as fallback option
+
 ## Join the community
 
 Join our community of developers creating universal apps.

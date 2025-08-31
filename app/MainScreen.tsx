@@ -1,6 +1,8 @@
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import React, { useState } from "react";
 import {
+  Alert,
   Image,
   ScrollView,
   Text,
@@ -52,7 +54,10 @@ const MainScreen: React.FC<MainScreenProps> = ({
 
         {/* Upload Card */}
         <TouchableOpacity
-          onPress={onQuickEditPress}
+          onPress={() => {
+            console.log("Upload card pressed");
+            onQuickEditPress();
+          }}
           className="bg-zinc-800 border-2 border-dashed border-zinc-600 rounded-xl p-6 w-full flex justify-center items-center"
         >
           <Ionicons name="cloud-upload" size={32} color="#a1a1aa" />
@@ -87,10 +92,45 @@ const PromptEngine: React.FC<{
   const [refImages, setRefImages] = useState<ImageAsset[]>([]);
   const [prompt, setPrompt] = useState("");
 
+  const pickImage = async () => {
+    try {
+      // Request permissions
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission needed",
+          "Please grant permission to access your photos"
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 1,
+      });
+
+      if (!result.canceled) {
+        const asset = {
+          uri: result.assets[0].uri,
+          base64: null,
+        };
+        setRefImages((prev) => [...prev, asset]);
+      }
+    } catch (error) {
+      console.error("Error picking image:", error);
+      Alert.alert("Error", "Failed to pick image");
+    }
+  };
+
   const handleUploadRefImage = () => {
     if (refImages.length >= 9) return;
-    // This will be handled by the parent component
-    console.log("Upload ref image clicked");
+    pickImage();
+  };
+
+  const removeImage = (index: number) => {
+    setRefImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -124,12 +164,36 @@ const PromptEngine: React.FC<{
           <Text className="text-zinc-400 mb-2">
             Reference Images ({refImages.length}/9)
           </Text>
-          <TouchableOpacity
-            onPress={handleUploadRefImage}
-            className="bg-zinc-800 border-2 border-dashed border-zinc-600 rounded-lg h-20 w-full flex justify-center items-center"
-          >
-            <Ionicons name="cloud-upload" size={24} color="white" />
-          </TouchableOpacity>
+
+          {/* Upload Card and Previews */}
+          <View className="flex-row flex-wrap mb-2">
+            {/* Upload Card */}
+            {refImages.length < 9 && (
+              <TouchableOpacity
+                onPress={handleUploadRefImage}
+                className="bg-zinc-800 border-2 border-dashed border-zinc-600 rounded-lg h-16 w-16 flex justify-center items-center mr-2 mb-2"
+              >
+                <Ionicons name="cloud-upload" size={20} color="white" />
+              </TouchableOpacity>
+            )}
+
+            {/* Image Previews */}
+            {refImages.map((image, index) => (
+              <View key={index} className="relative mr-2 mb-2">
+                <Image
+                  source={{ uri: image.uri }}
+                  className="w-16 h-16 rounded-lg"
+                  resizeMode="cover"
+                />
+                <TouchableOpacity
+                  onPress={() => removeImage(index)}
+                  className="absolute -top-1 -right-1 bg-red-500 rounded-full w-5 h-5 flex justify-center items-center"
+                >
+                  <Ionicons name="close" size={12} color="white" />
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
         </View>
       )}
 

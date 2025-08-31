@@ -19,8 +19,9 @@ interface UseGeminiAIReturn {
 }
 
 // Gemini API configuration
-const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
+const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || 'AIzaSyC-a43p0npnwt1O4bboy10hpeJu3VAEYzM';
 const MODEL_NAME = 'gemini-2.5-flash-image-preview';
+const USE_MOCK_MODE = process.env.EXPO_PUBLIC_USE_MOCK_MODE === 'true';
 
 // Initialize Gemini AI client
 let genAI: GoogleGenAI | null = null;
@@ -32,6 +33,21 @@ const getGenAIClient = () => {
     });
   }
   return genAI;
+};
+
+// Mock image generator for development/testing
+const generateMockImage = async (prompt: string): Promise<GalleryImage> => {
+  // Simulate API delay
+  await new Promise(resolve => setTimeout(resolve, 2000));
+
+  // Generate a mock image URL based on the prompt
+  const mockImageId = Math.floor(Math.random() * 1000);
+  const mockImageUrl = `https://picsum.photos/512/512?random=${mockImageId}`;
+
+  return {
+    id: Date.now(),
+    uri: mockImageUrl
+  };
 };
 
 export const useGeminiAI = (): UseGeminiAIReturn => {
@@ -66,6 +82,13 @@ export const useGeminiAI = (): UseGeminiAIReturn => {
     setError(null);
 
     try {
+      // Use mock mode if enabled (for development/testing)
+      if (USE_MOCK_MODE) {
+        console.log('Using mock mode for image generation');
+        const mockImage = await generateMockImage(prompt);
+        return mockImage;
+      }
+
       const client = getGenAIClient();
       if (!client) {
         throw new Error('Gemini AI client not initialized. Check your API key.');
@@ -96,17 +119,48 @@ export const useGeminiAI = (): UseGeminiAIReturn => {
       // Add text prompt
       parts.push({ text: prompt });
 
-      // Use the correct API method
-      const result = await (client as any).models.generateContent({
-        model: MODEL_NAME,
-        contents: [{
-          role: 'user',
-          parts: parts
-        }],
-        generationConfig: {
-          responseModalities: ['Text', 'Image'],
-        },
-      });
+      // Use the correct API method with retry logic
+      let result;
+      let retryCount = 0;
+      const maxRetries = 3;
+
+      while (retryCount < maxRetries) {
+        try {
+          result = await (client as any).models.generateContent({
+            model: MODEL_NAME,
+            contents: [{
+              role: 'user',
+              parts: parts
+            }],
+            generationConfig: {
+              responseModalities: ['Text', 'Image'],
+            },
+          });
+          break; // Success, exit retry loop
+        } catch (apiError: any) {
+          // Handle rate limiting (429) errors
+          if (apiError?.status === 429 || apiError?.code === 429) {
+            const retryDelay = Math.pow(2, retryCount) * 1000; // Exponential backoff
+            console.log(`Rate limited. Retrying in ${retryDelay}ms... (attempt ${retryCount + 1}/${maxRetries})`);
+
+            if (retryCount < maxRetries - 1) {
+              await new Promise(resolve => setTimeout(resolve, retryDelay));
+              retryCount++;
+              continue;
+            } else {
+              // Max retries reached, throw user-friendly error
+              throw new Error(
+                'API quota exceeded. You have reached the free tier limit for Gemini API. ' +
+                'Please try again later or upgrade to a paid plan. ' +
+                'Visit: https://ai.google.dev/gemini-api/docs/rate-limits'
+              );
+            }
+          } else {
+            // Re-throw non-rate-limiting errors
+            throw apiError;
+          }
+        }
+      }
 
       // Handle image response
       const candidates = result.candidates || [];
@@ -137,7 +191,21 @@ export const useGeminiAI = (): UseGeminiAIReturn => {
 
       return null;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to generate image';
+      let errorMessage = 'Failed to generate image';
+
+      if (err instanceof Error) {
+        // Handle specific error types
+        if (err.message.includes('quota') || err.message.includes('429') || err.message.includes('RESOURCE_EXHAUSTED')) {
+          errorMessage = 'API quota exceeded. You have reached the free tier limit for Gemini API. Please try again later or upgrade to a paid plan.';
+        } else if (err.message.includes('API key')) {
+          errorMessage = 'Invalid API key. Please check your Gemini API key configuration.';
+        } else if (err.message.includes('network') || err.message.includes('fetch')) {
+          errorMessage = 'Network error. Please check your internet connection and try again.';
+        } else {
+          errorMessage = err.message;
+        }
+      }
+
       setError(errorMessage);
       console.error('Gemini API Error:', err);
       return null;
@@ -155,6 +223,13 @@ export const useGeminiAI = (): UseGeminiAIReturn => {
     setError(null);
 
     try {
+      // Use mock mode if enabled (for development/testing)
+      if (USE_MOCK_MODE) {
+        console.log('Using mock mode for image editing');
+        const mockImage = await generateMockImage(`Edited: ${prompt}`);
+        return mockImage;
+      }
+
       const client = getGenAIClient();
       if (!client) {
         throw new Error('Gemini AI client not initialized. Check your API key.');
@@ -174,17 +249,48 @@ export const useGeminiAI = (): UseGeminiAIReturn => {
         }
       ];
 
-      // Use the correct API method
-      const result = await (client as any).models.generateContent({
-        model: MODEL_NAME,
-        contents: [{
-          role: 'user',
-          parts: parts
-        }],
-        generationConfig: {
-          responseModalities: ['Text', 'Image'],
-        },
-      });
+      // Use the correct API method with retry logic
+      let result;
+      let retryCount = 0;
+      const maxRetries = 3;
+
+      while (retryCount < maxRetries) {
+        try {
+          result = await (client as any).models.generateContent({
+            model: MODEL_NAME,
+            contents: [{
+              role: 'user',
+              parts: parts
+            }],
+            generationConfig: {
+              responseModalities: ['Text', 'Image'],
+            },
+          });
+          break; // Success, exit retry loop
+        } catch (apiError: any) {
+          // Handle rate limiting (429) errors
+          if (apiError?.status === 429 || apiError?.code === 429) {
+            const retryDelay = Math.pow(2, retryCount) * 1000; // Exponential backoff
+            console.log(`Rate limited (edit). Retrying in ${retryDelay}ms... (attempt ${retryCount + 1}/${maxRetries})`);
+
+            if (retryCount < maxRetries - 1) {
+              await new Promise(resolve => setTimeout(resolve, retryDelay));
+              retryCount++;
+              continue;
+            } else {
+              // Max retries reached, throw user-friendly error
+              throw new Error(
+                'API quota exceeded. You have reached the free tier limit for Gemini API. ' +
+                'Please try again later or upgrade to a paid plan. ' +
+                'Visit: https://ai.google.dev/gemini-api/docs/rate-limits'
+              );
+            }
+          } else {
+            // Re-throw non-rate-limiting errors
+            throw apiError;
+          }
+        }
+      }
 
       // Handle image response
       const candidates = result.candidates || [];
@@ -215,7 +321,21 @@ export const useGeminiAI = (): UseGeminiAIReturn => {
 
       return null;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to edit image';
+      let errorMessage = 'Failed to edit image';
+
+      if (err instanceof Error) {
+        // Handle specific error types
+        if (err.message.includes('quota') || err.message.includes('429') || err.message.includes('RESOURCE_EXHAUSTED')) {
+          errorMessage = 'API quota exceeded. You have reached the free tier limit for Gemini API. Please try again later or upgrade to a paid plan.';
+        } else if (err.message.includes('API key')) {
+          errorMessage = 'Invalid API key. Please check your Gemini API key configuration.';
+        } else if (err.message.includes('network') || err.message.includes('fetch')) {
+          errorMessage = 'Network error. Please check your internet connection and try again.';
+        } else {
+          errorMessage = err.message;
+        }
+      }
+
       setError(errorMessage);
       console.error('Gemini Edit API Error:', err);
       return null;
