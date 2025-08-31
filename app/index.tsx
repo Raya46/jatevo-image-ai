@@ -4,6 +4,7 @@ import {
   ImageRecord,
   SupabaseImageServiceRN,
 } from "@/services/supabaseService";
+import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import React, { useEffect, useState } from "react";
 import { Alert, Text, View } from "react-native";
@@ -29,7 +30,7 @@ const App = () => {
   const [isLoadingImages, setIsLoadingImages] = useState(true);
 
   // AI Hooks
-  const { generateImage, isLoading: aiLoading, error: aiError } = useGeminiAI();
+  const { generateImage, isLoading: aiLoading } = useGeminiAI();
   const {
     removeBackground,
     enhanceImage,
@@ -39,7 +40,10 @@ const App = () => {
     isProcessing: editLoading,
   } = useImageEditing();
 
-  const isLoading = aiLoading || editLoading || isLoadingImages;
+  // Separate loading states for different contexts
+  const isGenerating = aiLoading || editLoading;
+  const isInitialLoading = isLoadingImages;
+  const isAnyLoading = isGenerating || isInitialLoading;
 
   // Load real data from Supabase on mount
   useEffect(() => {
@@ -228,18 +232,14 @@ const App = () => {
 
   return (
     <View className="flex-1 bg-black">
-      {isLoading && (
-        <View className="absolute inset-0 bg-black/70 flex justify-center items-center z-50">
-          <Text className="text-white text-lg">Generating...</Text>
-        </View>
-      )}
       {currentView === "main" ? (
         <MainScreen
           onQuickEditPress={handleQuickEditPress}
           galleryImages={galleryImages}
           onEditImage={handleEditImage}
           onGenerate={generateWithNanoBanana}
-          isLoading={isLoading}
+          isLoading={isGenerating}
+          isInitialLoading={isInitialLoading}
         />
       ) : (
         <QuickEditScreen
@@ -248,8 +248,75 @@ const App = () => {
           onGenerate={generateWithNanoBanana}
           onImageEdit={handleImageEdit}
           onRePickImage={handleRePickImage}
-          isLoading={isLoading}
+          isLoading={isGenerating}
         />
+      )}
+
+      {/* Beautiful Generation Modal */}
+      {isGenerating && (
+        <View className="absolute inset-0 bg-black/80 flex justify-center items-center z-50">
+          <View className="bg-zinc-900 border border-zinc-700 rounded-3xl p-8 mx-6 max-w-sm w-full">
+            {/* Animated Icon */}
+            <View className="flex justify-center items-center mb-6">
+              <View className="relative">
+                <View className="w-20 h-20 bg-purple-600 rounded-full flex justify-center items-center">
+                  <Ionicons name="sparkles" size={32} color="white" />
+                </View>
+                {/* Pulsing animation effect */}
+                <View className="absolute inset-0 w-20 h-20 bg-purple-400 rounded-full animate-pulse opacity-30" />
+              </View>
+            </View>
+
+            {/* Title */}
+            <Text className="text-white text-2xl font-bold text-center mb-2">
+              Creating Magic
+            </Text>
+
+            {/* Subtitle */}
+            <Text className="text-zinc-400 text-base text-center mb-6">
+              AI is generating your image...
+            </Text>
+
+            {/* Progress Steps */}
+            <View className="space-y-3 mb-6">
+              <View className="flex-row items-center">
+                <View className="w-6 h-6 bg-purple-600 rounded-full flex justify-center items-center mr-3">
+                  <Ionicons name="checkmark" size={14} color="white" />
+                </View>
+                <Text className="text-zinc-300 text-sm">Processing prompt</Text>
+              </View>
+              <View className="flex-row items-center">
+                <View className="w-6 h-6 bg-purple-600 rounded-full flex justify-center items-center mr-3">
+                  <Ionicons name="checkmark" size={14} color="white" />
+                </View>
+                <Text className="text-zinc-300 text-sm">
+                  Analyzing reference images
+                </Text>
+              </View>
+              <View className="flex-row items-center">
+                <View className="w-6 h-6 bg-purple-500 rounded-full flex justify-center items-center mr-3 animate-pulse">
+                  <Ionicons name="sparkles" size={14} color="white" />
+                </View>
+                <Text className="text-purple-300 text-sm font-medium">
+                  Generating image
+                </Text>
+              </View>
+            </View>
+
+            {/* Progress Bar */}
+            <View className="w-full bg-zinc-700 rounded-full h-2 mb-4">
+              <View
+                className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full animate-pulse"
+                style={{ width: "70%" }}
+              />
+            </View>
+
+            {/* Fun Message */}
+            <Text className="text-zinc-500 text-sm text-center italic">
+              &ldquo;Art takes time, but magic is worth waiting for ✨&rdquo;
+            </Text>
+          </View>
+        </View>
       )}
     </View>
   );

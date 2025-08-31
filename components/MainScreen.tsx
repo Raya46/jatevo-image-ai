@@ -1,5 +1,5 @@
 // MainScreen dengan implementasi download yang lebih sederhana
-import { useImageDownload } from "@/hooks/useImageDownload";
+import { useBatchDownload, useImageDownload } from "@/hooks/useImageDownload";
 import { ImageRecord } from "@/services/supabaseService";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
@@ -31,6 +31,7 @@ interface MainScreenProps {
   onEditImage: (image: GalleryImage) => void;
   onGenerate: (prompt: string, images: ImageAsset[]) => Promise<void>;
   isLoading: boolean;
+  isInitialLoading: boolean;
 }
 
 const MainScreen: React.FC<MainScreenProps> = ({
@@ -39,6 +40,7 @@ const MainScreen: React.FC<MainScreenProps> = ({
   onEditImage,
   onGenerate,
   isLoading,
+  isInitialLoading,
 }) => {
   const handleGenerate = async (
     prompt: string,
@@ -95,6 +97,7 @@ const MainScreen: React.FC<MainScreenProps> = ({
         <OutputGalleryWithDownload
           galleryImages={galleryImages}
           onEditImage={onEditImage}
+          isInitialLoading={isInitialLoading}
         />
       </View>
     </ScrollView>
@@ -296,9 +299,13 @@ const PromptEngine: React.FC<{
 const OutputGalleryWithDownload: React.FC<{
   galleryImages: GalleryImage[];
   onEditImage: (image: GalleryImage) => void;
-}> = ({ galleryImages, onEditImage }) => {
+  isInitialLoading: boolean;
+}> = ({ galleryImages, onEditImage, isInitialLoading }) => {
   const { downloadImage, isDownloading, getProgress, totalActiveDownloads } =
     useImageDownload();
+
+  const { downloadMultiple, isBatchDownloading, batchState } =
+    useBatchDownload();
 
   const handleQuickDownload = async (image: GalleryImage) => {
     const success = await downloadImage(image, true);
@@ -320,7 +327,41 @@ const OutputGalleryWithDownload: React.FC<{
             </Text>
           </View>
         )}
+        {isBatchDownloading && (
+          <View className="flex-row items-center bg-purple-500/20 px-3 py-1 rounded-full">
+            <Ionicons name="download" size={14} color="#a855f7" />
+            <Text className="text-purple-400 text-sm ml-1 font-medium">
+              Batch: {batchState.completed}/{batchState.total}
+            </Text>
+          </View>
+        )}
       </View>
+
+      {/* Initial Loading Overlay */}
+      {isInitialLoading && (
+        <View className="absolute inset-0 bg-zinc-900/95 flex justify-center items-center rounded-2xl z-10">
+          <View className="flex items-center">
+            <View className="relative mb-4">
+              <View className="w-16 h-16 bg-purple-600 rounded-full flex justify-center items-center">
+                <Ionicons name="images" size={24} color="white" />
+              </View>
+              <View className="absolute inset-0 w-16 h-16 bg-purple-400 rounded-full animate-pulse opacity-30" />
+            </View>
+            <Text className="text-white text-lg font-bold mb-2">
+              Loading Gallery
+            </Text>
+            <Text className="text-zinc-400 text-sm text-center max-w-xs">
+              Fetching your images from the cloud...
+            </Text>
+            <View className="w-32 bg-zinc-700 rounded-full h-1 mt-4">
+              <View
+                className="bg-purple-500 h-1 rounded-full animate-pulse"
+                style={{ width: "60%" }}
+              />
+            </View>
+          </View>
+        </View>
+      )}
 
       {galleryImages.length === 0 ? (
         <View className="flex-1 justify-center items-center py-8">
@@ -464,14 +505,47 @@ const OutputGalleryWithDownload: React.FC<{
           {/* Batch Download Option */}
           {galleryImages.length > 1 && (
             <TouchableOpacity
+              onPress={() => downloadMultiple(galleryImages, true)}
               className="bg-purple-600 p-4 rounded-xl mt-4 flex-row items-center justify-center"
-              disabled={totalActiveDownloads > 0}
+              disabled={totalActiveDownloads > 0 || isBatchDownloading}
             >
               <Ionicons name="download" size={20} color="white" />
               <Text className="text-white font-bold ml-2">
-                Download All Images ({galleryImages.length})
+                {isBatchDownloading
+                  ? `Downloading... (${batchState.completed}/${batchState.total})`
+                  : `Download All Images (${galleryImages.length})`}
               </Text>
             </TouchableOpacity>
+          )}
+
+          {/* Batch Download Progress Overlay */}
+          {isBatchDownloading && (
+            <View className="absolute inset-0 bg-black/60 flex justify-center items-center rounded-2xl">
+              <View className="bg-zinc-800 p-6 rounded-2xl flex items-center max-w-xs">
+                <Ionicons name="download" size={32} color="#a855f7" />
+                <Text className="text-white text-lg font-bold mt-2">
+                  Downloading Images...
+                </Text>
+                <Text className="text-zinc-400 text-sm mt-1 text-center">
+                  {batchState.completed} of {batchState.total} completed
+                </Text>
+                <View className="w-full bg-zinc-700 rounded-full h-2 mt-4">
+                  <View
+                    className="bg-purple-500 h-2 rounded-full"
+                    style={{
+                      width: `${
+                        batchState.total > 0
+                          ? (batchState.completed / batchState.total) * 100
+                          : 0
+                      }%`,
+                    }}
+                  />
+                </View>
+                <Text className="text-zinc-500 text-xs mt-2">
+                  Other features remain accessible
+                </Text>
+              </View>
+            </View>
           )}
 
           {/* Debug info */}
