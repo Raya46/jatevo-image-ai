@@ -1,14 +1,19 @@
 import { useGeminiAI } from "@/hooks/useGeminiAI";
 import { useImageEditing } from "@/hooks/useImageEditing";
+import {
+  ImageRecord,
+  SupabaseImageServiceRN,
+} from "@/services/supabaseService";
 import * as ImagePicker from "expo-image-picker";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Alert, Text, View } from "react-native";
-import MainScreen from "./MainScreen";
-import QuickEditScreen from "./QuickEditScreen";
+import MainScreen from "../components/MainScreen";
+import QuickEditScreen from "../components/QuickEditScreen";
 
-interface GalleryImage {
+export interface GalleryImage {
   id: number;
   uri: string;
+  supabaseRecord?: ImageRecord;
 }
 
 interface ImageAsset {
@@ -16,18 +21,12 @@ interface ImageAsset {
   base64?: string | null;
 }
 
-// Placeholder untuk gambar yang dihasilkan
-const placeholderGallery: GalleryImage[] = [
-  { id: 1, uri: "https://placehold.co/400x400/1a1a1a/ffffff?text=Hasil+1" },
-  { id: 2, uri: "https://placehold.co/400x400/1a1a1a/ffffff?text=Hasil+2" },
-];
-
 const App = () => {
   // State utama aplikasi
   const [currentView, setCurrentView] = useState<"main" | "quickEdit">("main");
   const [quickEditImage, setQuickEditImage] = useState<ImageAsset | null>(null);
-  const [galleryImages, setGalleryImages] =
-    useState<GalleryImage[]>(placeholderGallery);
+  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
+  const [isLoadingImages, setIsLoadingImages] = useState(true);
 
   // AI Hooks
   const { generateImage, isLoading: aiLoading, error: aiError } = useGeminiAI();
@@ -35,15 +34,38 @@ const App = () => {
     removeBackground,
     enhanceImage,
     adjustColors,
-    combineImages,
     cropImage,
     applyFilter,
     isProcessing: editLoading,
-    error: editError,
   } = useImageEditing();
 
-  const isLoading = aiLoading || editLoading;
-  const error = aiError || editError;
+  const isLoading = aiLoading || editLoading || isLoadingImages;
+
+  // Load real data from Supabase on mount
+  useEffect(() => {
+    loadGalleryImages();
+  }, []);
+
+  const loadGalleryImages = async () => {
+    try {
+      setIsLoadingImages(true);
+      const images = await SupabaseImageServiceRN.getAllImages();
+
+      // Convert Supabase records to GalleryImage format
+      const galleryImages: GalleryImage[] = images.map((record) => ({
+        id: record.id || Date.now(),
+        uri: record.url,
+        supabaseRecord: record,
+      }));
+
+      setGalleryImages(galleryImages);
+      console.log(`Loaded ${galleryImages.length} images from Supabase`);
+    } catch (error) {
+      console.error("Failed to load gallery images:", error);
+    } finally {
+      setIsLoadingImages(false);
+    }
+  };
 
   // Fungsi untuk kembali ke layar utama
   const backToHome = () => {
@@ -112,7 +134,7 @@ const App = () => {
     setCurrentView("quickEdit");
   };
 
-  // Real AI-powered image generation
+  // Real AI-powered image generation with Supabase integration
   const generateWithNanoBanana = async (
     prompt: string,
     images: ImageAsset[] = []
@@ -120,9 +142,39 @@ const App = () => {
     try {
       const newImage = await generateImage(prompt, images);
       if (newImage) {
-        setGalleryImages((prev) => [newImage, ...prev]);
-        if (currentView === "quickEdit") {
-          setQuickEditImage({ uri: newImage.uri });
+        // Save to Supabase first
+        if (newImage.uri.startsWith("data:image/")) {
+          const saveResult = await SupabaseImageServiceRN.uploadAndSaveImage(
+            newImage.uri
+          );
+          if (saveResult.success && saveResult.record) {
+            // Update image with Supabase record
+            const imageWithRecord: GalleryImage = {
+              ...newImage,
+              supabaseRecord: saveResult.record,
+            };
+            setGalleryImages((prev) => [imageWithRecord, ...prev]);
+
+            if (currentView === "quickEdit") {
+              setQuickEditImage({ uri: newImage.uri });
+            }
+
+            Alert.alert("Success", "Image generated and saved to cloud!");
+          } else {
+            // Fallback: add without Supabase record
+            setGalleryImages((prev) => [newImage, ...prev]);
+            if (currentView === "quickEdit") {
+              setQuickEditImage({ uri: newImage.uri });
+            }
+            Alert.alert("Success", "Image generated successfully!");
+          }
+        } else {
+          // Image is already a URL, just add to gallery
+          setGalleryImages((prev) => [newImage, ...prev]);
+          if (currentView === "quickEdit") {
+            setQuickEditImage({ uri: newImage.uri });
+          }
+          Alert.alert("Success", "Image generated successfully!");
         }
       }
     } catch (err) {
