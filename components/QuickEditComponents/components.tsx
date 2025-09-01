@@ -104,7 +104,7 @@ export const BottomActionBar: React.FC<{
   const enabledColor = "#a1a1aa";
 
   return (
-    <View className="flex-row justify-around items-center p-3 bg-zinc-900 border-t border-zinc-700">
+    <View className="flex-row justify-around items-center p-3 bg-zinc-900  border-zinc-700">
       <TouchableOpacity
         className="flex-col items-center"
         onPress={canUndo ? onUndo : undefined}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Keyboard,
   Platform,
@@ -17,6 +17,7 @@ const RetouchTab: React.FC<RetouchTabProps> = ({
 }) => {
   const [prompt, setPrompt] = useState("");
   const [kbHeight, setKbHeight] = useState(0);
+  const inputRef = useRef<TextInput>(null);
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
@@ -35,23 +36,29 @@ const RetouchTab: React.FC<RetouchTabProps> = ({
     };
   }, []);
 
-  const handleExecuteEdit = () => {
-    if (quickEditImage && prompt.trim()) {
-      onImageEdit("adjust", quickEditImage.uri, prompt);
-    }
-  };
+  const canExecute = useMemo(
+    () => !!quickEditImage && !!prompt.trim() && !isLoading,
+    [quickEditImage, prompt, isLoading]
+  );
 
-  const canExecute = !!quickEditImage && !!prompt.trim() && !isLoading;
+  const handleExecuteEdit = useCallback(() => {
+    if (!canExecute || !quickEditImage) return;
 
-  const bottomSpacer = Math.max(0, kbHeight - insets.top);
+    // Cleanly close the keyboard first.
+    inputRef.current?.blur();
+    Keyboard.dismiss();
+
+    onImageEdit("adjust", quickEditImage.uri, prompt.trim());
+  }, [canExecute, quickEditImage, onImageEdit, prompt]);
+
+  // Use bottom inset to avoid double-padding on devices with a home indicator
+  const bottomSpacer = Math.max(0, kbHeight - insets.bottom);
 
   return (
-    <View
-      style={{ paddingBottom: insets.bottom, marginBottom: bottomSpacer }}
-      className="p-4 "
-    >
-      <View className="flex-row gap-4  items-center">
+    <View style={{ paddingBottom: insets.bottom, marginBottom: bottomSpacer }} className="p-4">
+      <View className="flex-row gap-4 items-center">
         <TextInput
+          ref={inputRef}
           placeholder="e.g., remove the person in the back"
           className="bg-zinc-800 text-white rounded-lg p-3 text-base flex-1"
           value={prompt}

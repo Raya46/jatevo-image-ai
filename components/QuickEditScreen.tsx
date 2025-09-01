@@ -23,10 +23,7 @@ import CropTab from "./QuickEditComponents/CropTab";
 import FiltersTab from "./QuickEditComponents/FiltersTab";
 import RetouchTab from "./QuickEditComponents/RetouchTab";
 
-// Types
 import { ImageAsset, QuickEditScreenProps, TabType } from "../helper/QuickEdit/types";
-
-// History hook (make sure you added it as shown earlier)
 import { useHistory } from "../hooks/useHistory";
 
 const isSameImage = (a: ImageAsset | null, b: ImageAsset | null) =>
@@ -43,11 +40,9 @@ const QuickEditScreen: React.FC<QuickEditScreenProps> = ({
   const [activeTab, setActiveTab] = React.useState<TabType>("retouch");
   const insets = useSafeAreaInsets();
 
-  // --- History state for the working image ---
   const { present, canUndo, canRedo, push, undo, redo, setInitial } =
     useHistory<ImageAsset | null>(quickEditImage);
 
-  // When the source image changes from the outside, seed a new history
   const prevPropImage = React.useRef<ImageAsset | null>(quickEditImage);
   React.useEffect(() => {
     if (!isSameImage(prevPropImage.current, quickEditImage)) {
@@ -56,17 +51,20 @@ const QuickEditScreen: React.FC<QuickEditScreenProps> = ({
     }
   }, [quickEditImage, setInitial]);
 
-  // Wrap onImageEdit so every committed edit becomes a new history snapshot
   const wrappedOnImageEdit = React.useCallback(
     (action: string, imageUri: string, params?: any) => {
-      const next: ImageAsset = { uri: imageUri, base64: present?.base64 ?? null };
+      const next: ImageAsset = {
+        uri: imageUri,
+        base64: present?.base64 ?? null,
+        height: present?.height ?? 0,
+        width: present?.width ?? 0,
+      };
       push(next);
       onImageEdit?.(action, imageUri, params);
     },
     [onImageEdit, push, present?.base64]
   );
 
-  // Tabs get the current snapshot as `quickEditImage` and our wrapped onImageEdit
   const renderTabContent = () => {
     const commonProps = {
       onImageEdit: wrappedOnImageEdit,
@@ -90,18 +88,15 @@ const QuickEditScreen: React.FC<QuickEditScreenProps> = ({
     }
   };
 
-  // Reset back to the *original* image passed in via prop
   const handleReset = React.useCallback(() => {
     setInitial(quickEditImage ?? null);
   }, [quickEditImage, setInitial]);
 
-  // Start new (clear editor then back home)
   const handleNew = React.useCallback(() => {
     setInitial(null);
     onBackToHome();
   }, [onBackToHome, setInitial]);
 
-  // Save current snapshot to gallery (mobile)
   const handleSave = React.useCallback(async () => {
     try {
       const uri = present?.uri;
@@ -148,14 +143,12 @@ const QuickEditScreen: React.FC<QuickEditScreenProps> = ({
 
       <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
 
-      {/* Preview uses the current history snapshot */}
       <ImagePreview
         quickEditImage={present}
         onRePickImage={onRePickImage}
         insets={insets}
       />
 
-      {/* Bottom Section (tool UIs) */}
       <View
         className="bg-zinc-900/80 border-t border-zinc-700"
         style={{ paddingBottom: Math.max(insets.bottom) }}
@@ -163,8 +156,6 @@ const QuickEditScreen: React.FC<QuickEditScreenProps> = ({
         {renderTabContent()}
       </View>
 
-      {/* Action bar wired to history + actions
-         NOTE: this requires the BottomActionBar version with these props */}
       <BottomActionBar
         onUndo={undo}
         onRedo={redo}

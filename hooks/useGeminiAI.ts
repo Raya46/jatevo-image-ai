@@ -38,7 +38,6 @@ export const useGeminiAI = (): UseGeminiAIReturn => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Convert image URI to base64
   const uriToBase64 = async (uri: string): Promise<string> => {
     try {
       const response = await fetch(uri);
@@ -73,7 +72,6 @@ export const useGeminiAI = (): UseGeminiAIReturn => {
 
       const parts: any[] = [];
 
-      // Add reference images
       if (referenceImages.length > 0) {
         for (const image of referenceImages) {
           let base64Data = image.base64;
@@ -93,7 +91,6 @@ export const useGeminiAI = (): UseGeminiAIReturn => {
 
       parts.push({ text: prompt });
 
-      // Try non-streaming approach first (more reliable)
       const response = await client.models.generateContent({
         model: MODEL_NAME,
         contents: [{ role: 'user', parts }],

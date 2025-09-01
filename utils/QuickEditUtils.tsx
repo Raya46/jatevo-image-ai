@@ -26,6 +26,8 @@ export const pickImageFromLibrary = async (): Promise<ImageAsset | null> => {
       return {
         uri: result.assets[0].uri,
         base64: null,
+        height: result.assets[0].height,
+        width: result.assets[0].width,
       };
     }
     return null;
