@@ -1,4 +1,4 @@
-// MainScreen dengan implementasi download yang lebih sederhana
+// MainScreen dengan SafeAreaView + bottom inset aware
 import { useBatchDownload, useImageDownload } from "@/hooks/useImageDownload";
 import { ImageRecord } from "@/services/supabaseService";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface GalleryImage {
   id: number;
@@ -42,6 +43,9 @@ const MainScreen: React.FC<MainScreenProps> = ({
   isLoading,
   isInitialLoading,
 }) => {
+  // ✅ Pakai insets untuk padding bawah dinamis
+  const insets = useSafeAreaInsets();
+
   const handleGenerate = async (
     prompt: string,
     referenceImages: ImageAsset[]
@@ -63,44 +67,55 @@ const MainScreen: React.FC<MainScreenProps> = ({
   };
 
   return (
-    <ScrollView className="flex-1 bg-black p-4">
-      <Text className="text-white text-3xl font-bold text-center mb-2">
-        JATEVO
-      </Text>
-      <Text className="text-purple-400 text-3xl font-bold text-center mb-6">
-        PHOTO EDITOR AI
-      </Text>
-
-      {/* Quick Edit Card */}
-      <View className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 mb-6 w-full">
-        <Text className="text-white text-2xl font-bold mb-2">Quick Edit</Text>
-        <Text className="text-zinc-400 text-base mb-4">
-          Upload an image to directly access retouch tools
+    // ✅ SafeAreaView membungkus seluruh screen (edges semua sisi)
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: "black" }}
+      edges={["top", "bottom", "left", "right"]}
+    >
+      <ScrollView
+        className="flex-1 bg-black p-4"
+        // ✅ Pastikan konten tidak ketumpuk home indicator
+        contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text className="text-white text-3xl font-bold text-center mb-2">
+          JATEVO
+        </Text>
+        <Text className="text-purple-400 text-3xl font-bold text-center mb-6">
+          PHOTO EDITOR AI
         </Text>
 
-        <TouchableOpacity
-          onPress={onQuickEditPress}
-          className="bg-zinc-800 border-2 border-dashed border-zinc-600 rounded-xl p-6 w-full flex justify-center items-center"
-        >
-          <Ionicons name="cloud-upload" size={32} color="#a1a1aa" />
-          <Text className="text-zinc-400 text-base mt-2 text-center">
-            Tap to select image from gallery
+        {/* Quick Edit Card */}
+        <View className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 mb-6 w-full">
+          <Text className="text-white text-2xl font-bold mb-2">Quick Edit</Text>
+          <Text className="text-zinc-400 text-base mb-4">
+            Upload an image to directly access retouch tools
           </Text>
-          <Text className="text-zinc-500 text-sm mt-1 text-center">
-            Image will be uploaded in full size
-          </Text>
-        </TouchableOpacity>
-      </View>
 
-      <View className="flex-col gap-4">
-        <PromptEngine onGenerate={handleGenerate} isLoading={isLoading} />
-        <OutputGalleryWithDownload
-          galleryImages={galleryImages}
-          onEditImage={onEditImage}
-          isInitialLoading={isInitialLoading}
-        />
-      </View>
-    </ScrollView>
+          <TouchableOpacity
+            onPress={onQuickEditPress}
+            className="bg-zinc-800 border-2 border-dashed border-zinc-600 rounded-xl p-6 w-full flex justify-center items-center"
+          >
+            <Ionicons name="cloud-upload" size={32} color="#a1a1aa" />
+            <Text className="text-zinc-400 text-base mt-2 text-center">
+              Tap to select image from gallery
+            </Text>
+            <Text className="text-zinc-500 text-sm mt-1 text-center">
+              Image will be uploaded in full size
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <View className="flex-col gap-4">
+          <PromptEngine onGenerate={handleGenerate} isLoading={isLoading} />
+          <OutputGalleryWithDownload
+            galleryImages={galleryImages}
+            onEditImage={onEditImage}
+            isInitialLoading={isInitialLoading}
+          />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 

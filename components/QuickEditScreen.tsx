@@ -1,15 +1,16 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
 import {
   Alert,
   Image,
-  SafeAreaView,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface ImageAsset {
   uri: string;
@@ -36,6 +37,8 @@ const QuickEditScreen: React.FC<QuickEditScreenProps> = ({
   const [activeTab, setActiveTab] = useState<
     "combine" | "retouch" | "crop" | "adjust" | "filters" | "image-to-image"
   >("retouch");
+
+  const insets = useSafeAreaInsets();
 
   // Debug logging
   console.log("QuickEditScreen rendered");
@@ -93,7 +96,12 @@ const QuickEditScreen: React.FC<QuickEditScreenProps> = ({
   };
 
   return (
-    <SafeAreaView className="flex-1 flex-col bg-black">
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: "black" }}
+      edges={["top", "bottom", "left", "right"]}
+    >
+      <StatusBar style="light" />
+
       {/* Header with Back Button */}
       <View className="bg-zinc-900 border-b border-zinc-700 px-4 py-3">
         <View className="flex-row items-center">
@@ -153,6 +161,7 @@ const QuickEditScreen: React.FC<QuickEditScreenProps> = ({
             <TouchableOpacity
               onPress={onRePickImage}
               className="absolute top-4 right-4 bg-black/50 p-2 rounded-full"
+              style={{ paddingTop: Math.max(insets.top * 0.25, 0) }}
             >
               <Ionicons name="camera" size={20} color="white" />
             </TouchableOpacity>
@@ -171,7 +180,11 @@ const QuickEditScreen: React.FC<QuickEditScreenProps> = ({
       </View>
 
       {/* Bottom Action Bar */}
-      <View className="bg-zinc-900/80 border-t border-zinc-700">
+      <View
+        className="bg-zinc-900/80 border-t border-zinc-700"
+        // pastikan aman dari home indicator
+        style={{ paddingBottom: Math.max(insets.bottom, 8) }}
+      >
         {/* Tab Content */}
         <TabContent />
 
