@@ -1,6 +1,8 @@
 export interface ImageAsset {
   uri: string;
   base64?: string | null;
+  width:number;
+  height:number
 }
 
 export interface QuickEditScreenProps {

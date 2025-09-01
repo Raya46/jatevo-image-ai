@@ -10,16 +10,12 @@ import React, { useEffect, useState } from "react";
 import { Alert, Text, View } from "react-native";
 import MainScreen from "../components/MainScreen";
 import QuickEditScreen from "../components/QuickEditScreen";
+import { ImageAsset } from "../helper/QuickEdit/types";
 
 export interface GalleryImage {
   id: number;
   uri: string;
   supabaseRecord?: ImageRecord;
-}
-
-interface ImageAsset {
-  uri: string;
-  base64?: string | null;
 }
 
 const App = () => {
@@ -101,6 +97,8 @@ const App = () => {
         const asset = {
           uri: result.assets[0].uri,
           base64: null, // Will be set if needed for API calls
+          width: 1024, // Default width
+          height: 1024, // Default height
         };
         onSuccess(asset);
       }
@@ -134,15 +132,20 @@ const App = () => {
 
   // Fungsi untuk edit gambar dari gallery
   const handleEditImage = (image: GalleryImage) => {
-    setQuickEditImage({ uri: image.uri });
+    setQuickEditImage({
+      uri: image.uri,
+      width: 1024,
+      height: 1024,
+      base64: null,
+    });
     setCurrentView("quickEdit");
   };
 
   // Real AI-powered image generation with Supabase integration
   const generateWithNanoBanana = async (
     prompt: string,
-    images: ImageAsset[] = []
-  ) => {
+    images: { uri: string; base64?: string | null }[] = []
+  ): Promise<void> => {
     try {
       const newImage = await generateImage(prompt, images);
       if (newImage) {
@@ -160,7 +163,12 @@ const App = () => {
             setGalleryImages((prev) => [imageWithRecord, ...prev]);
 
             if (currentView === "quickEdit") {
-              setQuickEditImage({ uri: newImage.uri });
+              setQuickEditImage({
+                uri: newImage.uri,
+                width: 1024,
+                height: 1024,
+                base64: null,
+              });
             }
 
             Alert.alert("Success", "Image generated and saved to cloud!");
@@ -168,7 +176,12 @@ const App = () => {
             // Fallback: add without Supabase record
             setGalleryImages((prev) => [newImage, ...prev]);
             if (currentView === "quickEdit") {
-              setQuickEditImage({ uri: newImage.uri });
+              setQuickEditImage({
+                uri: newImage.uri,
+                width: 1024,
+                height: 1024,
+                base64: null,
+              });
             }
             Alert.alert("Success", "Image generated successfully!");
           }
@@ -176,7 +189,12 @@ const App = () => {
           // Image is already a URL, just add to gallery
           setGalleryImages((prev) => [newImage, ...prev]);
           if (currentView === "quickEdit") {
-            setQuickEditImage({ uri: newImage.uri });
+            setQuickEditImage({
+              uri: newImage.uri,
+              width: 1024,
+              height: 1024,
+              base64: null,
+            });
           }
           Alert.alert("Success", "Image generated successfully!");
         }
@@ -222,7 +240,12 @@ const App = () => {
 
       if (editedImage) {
         setGalleryImages((prev) => [editedImage!, ...prev]);
-        setQuickEditImage({ uri: editedImage!.uri });
+        setQuickEditImage({
+          uri: editedImage!.uri,
+          width: 1024,
+          height: 1024,
+          base64: null,
+        });
       }
     } catch (err) {
       console.error("Error editing image:", err);

@@ -1,8 +1,13 @@
 // services/imageDownloadService.ts
-import { GalleryImage } from '@/hooks/useImageDownload';
 import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
 import { Alert, Linking, Platform } from 'react-native';
+
+export interface GalleryImage {
+  id: number;
+  uri: string;
+  supabaseRecord?: any;
+}
 
 export interface DownloadResult {
   success: boolean;
@@ -116,20 +121,19 @@ export class ImageDownloadService {
       console.log('✅ File saved to temp location');
 
       // Save to media library
-      const asset = await MediaLibrary.saveToLibraryAsync(fileUri);
-      
-      console.log('✅ Image saved to gallery:', asset);
+      await MediaLibrary.saveToLibraryAsync(fileUri);
+
+      console.log('✅ Image saved to gallery');
 
       // Clean up temporary file
       await FileSystem.deleteAsync(fileUri, { idempotent: true });
-      
+
       console.log('🧹 Temporary file cleaned up');
 
       return {
         success: true,
         message: 'Image saved to gallery successfully!',
         filePath: fileUri,
-        asset: asset,
       };
 
     } catch (error) {
@@ -177,20 +181,19 @@ export class ImageDownloadService {
       console.log('✅ File downloaded successfully');
 
       // Save to media library
-      const asset = await MediaLibrary.saveToLibraryAsync(fileUri);
-      
-      console.log('✅ Image saved to gallery:', asset);
+      await MediaLibrary.saveToLibraryAsync(fileUri);
+
+      console.log('✅ Image saved to gallery');
 
       // Clean up temporary file
       await FileSystem.deleteAsync(fileUri, { idempotent: true });
-      
+
       console.log('🧹 Temporary file cleaned up');
 
       return {
         success: true,
         message: 'Image downloaded to gallery successfully!',
         filePath: fileUri,
-        asset: asset,
       };
 
     } catch (error) {
@@ -288,15 +291,14 @@ export class ImageDownloadService {
         }
 
         // Save to gallery
-        const asset = await MediaLibrary.saveToLibraryAsync(fileUri);
-        
+        await MediaLibrary.saveToLibraryAsync(fileUri);
+
         // Clean up
         await FileSystem.deleteAsync(fileUri, { idempotent: true });
 
         return {
           success: true,
           message: 'Image downloaded successfully!',
-          asset: asset,
         };
       }
 
