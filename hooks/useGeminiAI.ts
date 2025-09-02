@@ -1,6 +1,10 @@
 import { convertUriToBase64Enhanced } from '@/utils/ImageUriUtils';
-import { GoogleGenAI } from '@google/genai';
 import { useCallback, useState } from 'react';
+// Import FileSystem dari expo
+import * as FileSystem from 'expo-file-system';
+// --- PERUBAHAN: Import library manipulasi gambar ---
+import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+
 
 interface ImageAsset {
   uri: string;
@@ -25,17 +29,10 @@ interface UseGeminiAIReturn {
 const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
 const MODEL_NAME = 'gemini-2.5-flash-image-preview';
 
-// Initialize Gemini AI client
-let genAI: GoogleGenAI | null = null;
+// --- DIHAPUS --- Client tidak lagi digunakan untuk request
+// let genAI: GoogleGenAI | null = null;
+// const getGenAIClient = () => { ... };
 
-const getGenAIClient = () => {
-  if (!genAI && GEMINI_API_KEY) {
-    genAI = new GoogleGenAI({
-      apiKey: GEMINI_API_KEY,
-    });
-  }
-  return genAI;
-};
 
 export const useGeminiAI = (): UseGeminiAIReturn => {
   const [isLoading, setIsLoading] = useState(false);
@@ -44,8 +41,24 @@ export const useGeminiAI = (): UseGeminiAIReturn => {
   // React Native compatible base64 conversion using utility
   const uriToBase64 = async (uri: string): Promise<string> => {
     try {
-      console.log('Converting URI using enhanced utility function...');
-      return await convertUriToBase64Enhanced(uri);
+      console.log('🖼️ Resizing and compressing image before conversion...');
+      
+      // --- PERUBAHAN UTAMA: Manipulasi gambar sebelum konversi ---
+      // Ubah ukuran gambar agar dimensi terpanjangnya adalah 1024 piksel
+      // dan kompres kualitasnya menjadi 70% (format JPEG)
+      const manipulatedImage = await manipulateAsync(
+        uri,
+        [{ resize: { width: 1024, height: 1024 } }], // Resizes while maintaining aspect ratio
+        { compress: 0.7, format: SaveFormat.JPEG }
+      );
+
+      console.log('✅ Image resized and compressed successfully.');
+      console.log('New URI:', manipulatedImage.uri);
+      
+      // Gunakan URI dari gambar yang sudah dimanipulasi untuk konversi ke base64
+      console.log('Converting resized URI using enhanced utility function...');
+      return await convertUriToBase64Enhanced(manipulatedImage.uri);
+
     } catch (err) {
       console.error('Enhanced conversion failed, trying fallback...');
       
@@ -73,9 +86,8 @@ export const useGeminiAI = (): UseGeminiAIReturn => {
       console.log('🚀 Starting image generation...');
       console.log('📝 Prompt:', prompt);
       console.log('🖼️ Reference images:', referenceImages.length);
-
-      const client = getGenAIClient();
-      if (!client) {
+      
+      if (!GEMINI_API_KEY) {
         throw new Error('Gemini AI client not initialized. Check your API key.');
       }
 
@@ -91,7 +103,6 @@ export const useGeminiAI = (): UseGeminiAIReturn => {
           try {
             let base64Data = image.base64;
             
-            // If no base64 provided, convert from URI
             if (!base64Data && image.uri) {
               console.log(`🔄 Converting reference image ${i + 1} to base64...`);
               base64Data = await uriToBase64(image.uri);
@@ -110,22 +121,33 @@ export const useGeminiAI = (): UseGeminiAIReturn => {
             }
           } catch (imageError) {
             console.error(`❌ Failed to process reference image ${i + 1}:`, imageError);
-            // Continue with other images instead of failing completely
           }
         }
       }
 
-      // Add text prompt
       parts.push({ text: prompt });
 
-      console.log('🔄 Sending request to Gemini API...');
-      console.log('📊 Total parts:', parts.length);
+      // --- PERUBAHAN UTAMA: Menggunakan fetch() ---
+      console.log('🔄 Sending request to Gemini API via fetch...');
+      const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${GEMINI_API_KEY}`;
 
-      const response = await client.models.generateContent({
-        model: MODEL_NAME,
-        contents: [{ role: 'user', parts }],
+      const apiResponse = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts }],
+        }),
       });
 
+      if (!apiResponse.ok) {
+        const errorBody = await apiResponse.text();
+        console.error('API Error Response:', errorBody);
+        throw new Error(`API request failed with status ${apiResponse.status}: ${errorBody}`);
+      }
+
+      const response = await apiResponse.json();
       console.log('✅ Received response from Gemini API');
 
       let imageData = null;
@@ -147,18 +169,28 @@ export const useGeminiAI = (): UseGeminiAIReturn => {
       }
 
       if (imageData?.data) {
-        const imageUri = `data:${imageData.mimeType};base64,${imageData.data}`;
-        console.log('✅ Image generated successfully');
-        console.log('📊 Generated image size:', Math.round(imageUri.length / 1024), 'KB');
+        const tempFilePath = FileSystem.cacheDirectory + `generated_image_${Date.now()}.jpeg`;
+
+        await FileSystem.writeAsStringAsync(tempFilePath, imageData.data, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
         
+        console.log('✅ Image generated and saved to temporary file:', tempFilePath);
+        
+        const fileInfo = await FileSystem.getInfoAsync(tempFilePath);
+        if (fileInfo.exists) {
+            console.log('📊 Generated image size:', Math.round(fileInfo.size / 1024), 'KB');
+        }
+
         return { 
           id: Date.now(), 
-          uri: imageUri 
+          uri: tempFilePath 
         };
       }
 
       if (textResponse) {
-        console.log('💬 AI Response:', textResponse);
+        console.warn('⚠️ No image data received, but API returned text:', textResponse);
+        throw new Error(`API returned a text message instead of an image: ${textResponse.substring(0, 200)}...`);
       }
 
       throw new Error('No image data received from API');
@@ -194,11 +226,9 @@ export const useGeminiAI = (): UseGeminiAIReturn => {
 
     try {
       console.log('🎨 Starting image editing...');
-      console.log('🖼️ Image URI type:', imageUri.startsWith('data:') ? 'Data URL' : 'Remote URL');
       console.log('📝 Edit prompt:', prompt);
 
-      const client = getGenAIClient();
-      if (!client) {
+      if (!GEMINI_API_KEY) {
         throw new Error('Gemini AI client not initialized. Check your API key.');
       }
 
@@ -207,22 +237,31 @@ export const useGeminiAI = (): UseGeminiAIReturn => {
       console.log('✅ Image converted to base64 successfully');
 
       const parts = [
-        {
-          inlineData: {
-            mimeType: 'image/jpeg',
-            data: base64Data
-          }
-        },
+        { inlineData: { mimeType: 'image/jpeg', data: base64Data }},
         { text: `Edit this image: ${prompt}` }
       ];
 
-      console.log('🔄 Sending edit request to Gemini API...');
+      // --- PERUBAHAN UTAMA: Menggunakan fetch() ---
+      console.log('🔄 Sending edit request to Gemini API via fetch...');
+      const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${GEMINI_API_KEY}`;
 
-      const response = await client.models.generateContent({
-        model: MODEL_NAME,
-        contents: [{ role: 'user', parts }],
+      const apiResponse = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts }],
+        }),
       });
 
+      if (!apiResponse.ok) {
+        const errorBody = await apiResponse.text();
+        console.error('API Error Response:', errorBody);
+        throw new Error(`API request failed with status ${apiResponse.status}: ${errorBody}`);
+      }
+      
+      const response = await apiResponse.json();
       console.log('✅ Received edit response from Gemini API');
 
       let imageData = null;
@@ -244,18 +283,28 @@ export const useGeminiAI = (): UseGeminiAIReturn => {
       }
 
       if (imageData?.data) {
-        const editedImageUri = `data:${imageData.mimeType};base64,${imageData.data}`;
-        console.log('✅ Image edited successfully');
-        console.log('📊 Edited image size:', Math.round(editedImageUri.length / 1024), 'KB');
+        const tempFilePath = FileSystem.cacheDirectory + `edited_image_${Date.now()}.jpeg`;
+
+        await FileSystem.writeAsStringAsync(tempFilePath, imageData.data, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+
+        console.log('✅ Image edited and saved to temporary file:', tempFilePath);
         
+        const fileInfo = await FileSystem.getInfoAsync(tempFilePath);
+        if (fileInfo.exists) {
+            console.log('📊 Edited image size:', Math.round(fileInfo.size / 1024), 'KB');
+        }
+
         return { 
           id: Date.now(), 
-          uri: editedImageUri 
+          uri: tempFilePath
         };
       }
 
       if (textResponse) {
-        console.log('💬 AI Edit Response:', textResponse);
+        console.warn('⚠️ No image data received, but API returned text:', textResponse);
+        throw new Error(`API returned a text message instead of an image: ${textResponse.substring(0, 200)}...`);
       }
 
       throw new Error('No edited image received from API');
@@ -291,3 +340,4 @@ export const useGeminiAI = (): UseGeminiAIReturn => {
     error
   };
 };
+
