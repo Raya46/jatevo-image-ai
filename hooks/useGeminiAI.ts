@@ -25,37 +25,27 @@ interface UseGeminiAIReturn {
   error: string | null;
 }
 
-// Gemini API configuration
 const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
 const MODEL_NAME = 'gemini-2.5-flash-image-preview';
-
-// --- DIHAPUS --- Client tidak lagi digunakan untuk request
-// let genAI: GoogleGenAI | null = null;
-// const getGenAIClient = () => { ... };
 
 
 export const useGeminiAI = (): UseGeminiAIReturn => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // React Native compatible base64 conversion using utility
   const uriToBase64 = async (uri: string): Promise<string> => {
     try {
       console.log('🖼️ Resizing and compressing image before conversion...');
       
-      // --- PERUBAHAN UTAMA: Manipulasi gambar sebelum konversi ---
-      // Ubah ukuran gambar agar dimensi terpanjangnya adalah 1024 piksel
-      // dan kompres kualitasnya menjadi 70% (format JPEG)
       const manipulatedImage = await manipulateAsync(
         uri,
-        [{ resize: { width: 1024, height: 1024 } }], // Resizes while maintaining aspect ratio
+        [{ resize: { width: 1024, height: 1024 } }], 
         { compress: 0.7, format: SaveFormat.JPEG }
       );
 
       console.log('✅ Image resized and compressed successfully.');
       console.log('New URI:', manipulatedImage.uri);
       
-      // Gunakan URI dari gambar yang sudah dimanipulasi untuk konversi ke base64
       console.log('Converting resized URI using enhanced utility function...');
       return await convertUriToBase64Enhanced(manipulatedImage.uri);
 
@@ -93,7 +83,6 @@ export const useGeminiAI = (): UseGeminiAIReturn => {
 
       const parts: any[] = [];
 
-      // Process reference images
       if (referenceImages.length > 0) {
         console.log('🔄 Processing reference images...');
         
@@ -127,7 +116,6 @@ export const useGeminiAI = (): UseGeminiAIReturn => {
 
       parts.push({ text: prompt });
 
-      // --- PERUBAHAN UTAMA: Menggunakan fetch() ---
       console.log('🔄 Sending request to Gemini API via fetch...');
       const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${GEMINI_API_KEY}`;
 
@@ -241,7 +229,6 @@ export const useGeminiAI = (): UseGeminiAIReturn => {
         { text: `Edit this image: ${prompt}` }
       ];
 
-      // --- PERUBAHAN UTAMA: Menggunakan fetch() ---
       console.log('🔄 Sending edit request to Gemini API via fetch...');
       const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${GEMINI_API_KEY}`;
 
