@@ -1,22 +1,54 @@
-import React, { useState } from "react";
+import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { CROP_MODES } from "../../helper/QuickEdit/constants";
-import { TabProps } from "../../helper/QuickEdit/types";
+import { CropRegion, ImageAsset } from "../../helper/QuickEdit/types";
 
-const CropTab: React.FC<TabProps> = ({ 
-  onImageEdit, 
-  quickEditImage, 
-  isLoading 
+interface CropTabProps {
+  onImageEdit: (action: string, uri: string, params: any) => void;
+  quickEditImage: ImageAsset | null;
+  isLoading: boolean;
+  cropRegion: CropRegion | null;
+  cropMode: "free" | "1:1" | "16:9";
+  setCropMode: (mode: "free" | "1:1" | "16:9") => void;
+  imageLayout: { width: number; height: number } | null;
+  originalImage: ImageAsset | null;
+}
+
+const CropTab: React.FC<CropTabProps> = ({
+  onImageEdit,
+  quickEditImage,
+  isLoading,
+  cropRegion,
+  cropMode,
+  setCropMode,
+  imageLayout,
+  originalImage,
 }) => {
-  const [cropMode, setCropMode] = useState<"free" | "1:1" | "16:9">("free");
-
   const handleExecuteCrop = () => {
-    if (quickEditImage) {
-      onImageEdit("crop", quickEditImage.uri, cropMode);
+    if (quickEditImage && cropRegion && imageLayout && originalImage) {
+      const scaleX =
+        (originalImage.width ?? imageLayout.width) / imageLayout.width;
+      const scaleY =
+        (originalImage.height ?? imageLayout.height) / imageLayout.height;
+
+      const cropParams = {
+        mode: cropMode,
+        region: {
+          x: cropRegion.x * scaleX,
+          y: cropRegion.y * scaleY,
+          width: cropRegion.width * scaleX,
+          height: cropRegion.height * scaleY,
+        },
+        imageSize: {
+          width: originalImage.width ?? imageLayout.width,
+          height: originalImage.height ?? imageLayout.height,
+        },
+      };
+      onImageEdit("crop", quickEditImage.uri, cropParams);
     }
   };
 
-  const canExecute = quickEditImage && !isLoading;
+  const canExecute = quickEditImage && !isLoading && cropRegion;
 
   return (
     <View className="p-4">
@@ -33,7 +65,7 @@ const CropTab: React.FC<TabProps> = ({
           </TouchableOpacity>
         ))}
       </View>
-      
+
       <TouchableOpacity
         onPress={handleExecuteCrop}
         disabled={!canExecute}

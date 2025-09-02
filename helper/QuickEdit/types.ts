@@ -14,6 +14,13 @@ export interface QuickEditScreenProps {
   isLoading: boolean;
 }
 
+export interface CropRegion {
+  x: number;      
+  y: number;      
+  width: number;  
+  height: number; 
+}
+
 export type TabType = "combine" | "retouch" | "crop" | "adjust" | "filters";
 
 export interface TabProps {

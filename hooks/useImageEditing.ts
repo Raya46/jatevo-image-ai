@@ -22,7 +22,7 @@ interface UseImageEditingReturn {
 
   // Advanced operations
   combineImages: (images: ImageAsset[], prompt: string) => Promise<GalleryImage | null>;
-  cropImage: (imageUri: string, cropInstructions: string) => Promise<GalleryImage | null>;
+  cropImage: (imageUri: string, cropParams: any) => Promise<GalleryImage | null>; 
   applyFilter: (imageUri: string, filterType: string) => Promise<GalleryImage | null>;
 
   // Custom editing
@@ -153,11 +153,27 @@ export const useImageEditing = (): UseImageEditingReturn => {
   // Crop image with instructions
   const cropImage = useCallback(async (
     imageUri: string,
-    cropInstructions: string
+    // Menerima objek parameter, bukan hanya string
+    cropParams: { 
+      mode: string; 
+      region?: { x: number; y: number; width: number; height: number };
+      imageSize: { width: number; height: number };
+    }
   ): Promise<GalleryImage | null> => {
     setIsProcessing(true);
     try {
-      const prompt = `Crop this image according to these instructions: ${cropInstructions}. Focus on the important parts, maintain proper composition, and ensure the cropped result looks balanced and professional.`;
+      let prompt = '';
+      const { mode, region, imageSize } = cropParams;
+
+      if (region) {
+        // Membuat prompt yang sangat spesifik jika ada data region dari UI
+        const { x, y, width, height } = region;
+        prompt = `The original image size is ${Math.round(imageSize.width)}x${Math.round(imageSize.height)} pixels. Crop this image to the exact pixel region defined by the bounding box: start at x=${Math.round(x)}, y=${Math.round(y)} with a width of ${Math.round(width)} and a height of ${Math.round(height)}. Retain the content within this box and discard everything outside. The final image should have dimensions of ${Math.round(width)}x${Math.round(height)}.`;
+      } else {
+        // Fallback jika tidak ada interaksi visual (meskipun seharusnya tidak terjadi)
+        prompt = `Crop this image according to these instructions: ${mode}. Focus on the important parts, maintain proper composition, and ensure the cropped result looks balanced and professional.`;
+      }
+
       return await safeEdit(imageUri, prompt, 'Image Cropping');
     } catch (err) {
       console.error('❌ Crop image failed:', err);
