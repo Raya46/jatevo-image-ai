@@ -1,4 +1,3 @@
-// hooks/useHistory.ts
 import { useMemo, useReducer } from "react";
 
 type State<T> = { stack: T[]; index: number; limit: number };
@@ -12,7 +11,6 @@ type Action<T> =
 function reducer<T>(state: State<T>, action: Action<T>): State<T> {
   switch (action.type) {
     case "PUSH": {
-      // drop future
       const base = state.stack.slice(0, state.index + 1);
       let nextStack = [...base, action.value];
 
@@ -20,14 +18,16 @@ function reducer<T>(state: State<T>, action: Action<T>): State<T> {
       if (nextStack.length > state.limit) {
         const overflow = nextStack.length - state.limit;
         nextStack = nextStack.slice(overflow);
-        return { stack: nextStack, index: nextStack.length - 1, limit: state.limit };
+        return {
+          stack: nextStack,
+          index: nextStack.length - 1,
+          limit: state.limit,
+        };
       }
       return { stack: nextStack, index: base.length, limit: state.limit };
     }
     case "UNDO":
-      return state.index > 0
-        ? { ...state, index: state.index - 1 }
-        : state;
+      return state.index > 0 ? { ...state, index: state.index - 1 } : state;
     case "REDO":
       return state.index < state.stack.length - 1
         ? { ...state, index: state.index + 1 }

@@ -1,4 +1,3 @@
-// utils/imageUriUtils.ts
 import * as FileSystem from 'expo-file-system';
 
 export interface ImageInfo {
@@ -13,9 +12,7 @@ export interface ImageInfo {
 
 export class ImageUriUtils {
   
-  /**
-   * Analyze URI to get information about the image
-   */
+
   static analyzeUri(uri: string): ImageInfo {
     const info: ImageInfo = {
       isLocal: false,
@@ -27,14 +24,12 @@ export class ImageUriUtils {
       info.isDataUrl = true;
       info.isLocal = true;
       
-      // Extract MIME type and format
       const mimeMatch = uri.match(/data:image\/([^;]+)/);
       if (mimeMatch) {
         info.mimeType = `image/${mimeMatch[1]}`;
         info.format = mimeMatch[1] as any;
       }
       
-      // Calculate approximate size
       const base64Part = uri.split(',')[1];
       if (base64Part) {
         info.size = Math.round((base64Part.length * 3) / 4); // Base64 to bytes conversion
@@ -42,7 +37,6 @@ export class ImageUriUtils {
     } else if (uri.startsWith('file://')) {
       info.isLocal = true;
       
-      // Extract format from file extension
       const extension = uri.split('.').pop()?.toLowerCase();
       if (extension && ['png', 'jpg', 'jpeg', 'webp'].includes(extension)) {
         info.format = extension === 'jpg' ? 'jpeg' : extension as any;
@@ -51,7 +45,6 @@ export class ImageUriUtils {
     } else if (uri.startsWith('http://') || uri.startsWith('https://')) {
       info.isLocal = false;
       
-      // Try to extract format from URL
       const urlParts = uri.split('?')[0]; // Remove query params
       const extension = urlParts.split('.').pop()?.toLowerCase();
       if (extension && ['png', 'jpg', 'jpeg', 'webp'].includes(extension)) {
@@ -60,15 +53,11 @@ export class ImageUriUtils {
       }
     } else if (uri.startsWith('content://')) {
       info.isLocal = true;
-      // Android content URI, format might be unknown
     }
 
     return info;
   }
 
-  /**
-   * Convert any URI to base64 string - React Native compatible
-   */
   static async convertToBase64(uri: string): Promise<{
     base64: string;
     mimeType: string;
@@ -83,7 +72,6 @@ export class ImageUriUtils {
       let base64: string;
       let mimeType = info.mimeType || 'image/jpeg';
 
-      // Method 1: Data URL - extract base64 directly
       if (info.isDataUrl) {
         console.log('✅ Extracting base64 from data URL...');
         const parts = uri.split(',');
@@ -92,13 +80,11 @@ export class ImageUriUtils {
         }
         base64 = parts[1];
         
-        // Validate base64
         if (!base64 || base64.length === 0) {
           throw new Error('Empty base64 data in data URL');
         }
       }
       
-      // Method 2: Local file URI
       else if (uri.startsWith('file://') || uri.startsWith('content://')) {
         console.log('🔄 Reading local file as base64...');
         base64 = await FileSystem.readAsStringAsync(uri, {
@@ -110,7 +96,6 @@ export class ImageUriUtils {
         }
       }
       
-      // Method 3: Remote URL - download then convert
       else if (uri.startsWith('http://') || uri.startsWith('https://')) {
         console.log('🔄 Downloading remote image...');
         
@@ -129,7 +114,6 @@ export class ImageUriUtils {
           encoding: FileSystem.EncodingType.Base64,
         });
 
-        // Clean up temporary file
         await FileSystem.deleteAsync(localUri, { idempotent: true });
         
         if (!base64) {

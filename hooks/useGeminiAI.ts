@@ -1,9 +1,7 @@
 import { convertUriToBase64Enhanced } from '@/utils/ImageUriUtils';
-import { useCallback, useState } from 'react';
-// Import FileSystem dari expo
 import * as FileSystem from 'expo-file-system';
-// --- PERUBAHAN: Import library manipulasi gambar ---
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+import { useCallback, useState } from 'react';
 
 
 interface ImageAsset {

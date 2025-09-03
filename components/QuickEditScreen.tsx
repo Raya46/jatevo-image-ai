@@ -39,7 +39,15 @@ import { InteractiveCropView } from "./QuickEditComponents/InteractiveCropView";
 const isSameImage = (a: ImageAsset | null, b: ImageAsset | null) =>
   a?.uri === b?.uri;
 
-const QuickEditScreen: React.FC<QuickEditScreenProps> = ({
+interface ModifiedQuickEditScreenProps extends QuickEditScreenProps {
+  onImageEdit: (
+    action: string,
+    imageUri: string,
+    params?: any
+  ) => Promise<ImageAsset | null>;
+}
+
+const QuickEditScreen: React.FC<ModifiedQuickEditScreenProps> = ({
   quickEditImage,
   onBackToHome,
   onGenerate,
@@ -70,18 +78,18 @@ const QuickEditScreen: React.FC<QuickEditScreenProps> = ({
   }, [quickEditImage, setInitial]);
 
   const wrappedOnImageEdit = useCallback(
-    (action: string, imageUri: string, params?: any) => {
-      const next: ImageAsset = {
-        uri: imageUri,
-        base64: present?.base64 ?? null,
-        height: present?.height ?? 0,
-        width: present?.width ?? 0,
-      };
-      push(next);
-      onImageEdit?.(action, imageUri, params);
+    async (action: string, imageUri: string, params?: any) => {
+      if (!onImageEdit) return;
+
+      const editedImageResult = await onImageEdit(action, imageUri, params);
+
+      if (editedImageResult && editedImageResult.uri) {
+        push(editedImageResult);
+      }
     },
-    [onImageEdit, push, present?.base64]
+    [onImageEdit, push]
   );
+
   const onImageLayout = (event: any) => {
     const { width, height } = event.nativeEvent.layout;
     setImageLayout({ width, height });
@@ -120,8 +128,9 @@ const QuickEditScreen: React.FC<QuickEditScreenProps> = ({
   };
 
   const handleReset = useCallback(() => {
-    setInitial(quickEditImage ?? null);
-  }, [quickEditImage, setInitial]);
+    redo();
+    undo();
+  }, [redo, undo]);
 
   const handleNew = useCallback(() => {
     setInitial(null);
@@ -185,6 +194,7 @@ const QuickEditScreen: React.FC<QuickEditScreenProps> = ({
           {present?.uri ? (
             <View className="w-full h-full">
               <Image
+                key={present.uri}
                 source={{ uri: present.uri }}
                 className="w-full h-full"
                 resizeMode="contain"

@@ -28,7 +28,6 @@ export const InteractiveCropView: React.FC<InteractiveCropViewProps> = ({
   const width = useSharedValue(imageLayout.width / 2);
   const height = useSharedValue(imageLayout.height / 2);
 
-  // Inisialisasi posisi awal
   useEffect(() => {
     offsetX.value = withTiming(imageLayout.width / 4);
     offsetY.value = withTiming(imageLayout.height / 4);
@@ -52,7 +51,6 @@ export const InteractiveCropView: React.FC<InteractiveCropViewProps> = ({
       const newX = offsetX.value + event.changeX;
       const newY = offsetY.value + event.changeY;
 
-      // Batasi pergerakan agar tidak keluar dari gambar
       offsetX.value = Math.max(
         0,
         Math.min(newX, imageLayout.width - width.value)
@@ -69,14 +67,12 @@ export const InteractiveCropView: React.FC<InteractiveCropViewProps> = ({
       const newWidth = width.value + event.changeX;
       let newHeight = height.value + event.changeY;
 
-      // Terapkan aspect ratio
       if (cropMode === "1:1") {
         newHeight = newWidth;
       } else if (cropMode === "16:9") {
         newHeight = newWidth * (9 / 16);
       }
 
-      // Batasi ukuran agar tidak lebih besar dari gambar
       width.value = Math.min(newWidth, imageLayout.width - offsetX.value);
       height.value = Math.min(newHeight, imageLayout.height - offsetY.value);
     })

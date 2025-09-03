@@ -15,20 +15,20 @@ interface GalleryImage {
 }
 
 interface UseImageEditingReturn {
-  // Basic editing operations
+  
   removeBackground: (imageUri: string) => Promise<GalleryImage | null>;
   enhanceImage: (imageUri: string) => Promise<GalleryImage | null>;
   adjustColors: (imageUri: string, adjustments: string) => Promise<GalleryImage | null>;
 
-  // Advanced operations
+  
   combineImages: (images: ImageAsset[], prompt: string) => Promise<GalleryImage | null>;
   cropImage: (imageUri: string, cropParams: any) => Promise<GalleryImage | null>; 
   applyFilter: (imageUri: string, filterType: string) => Promise<GalleryImage | null>;
 
-  // Custom editing
+  
   customEdit: (imageUri: string, instructions: string) => Promise<GalleryImage | null>;
 
-  // Utility
+  
   isProcessing: boolean;
   error: string | null;
   clearError: () => void;
@@ -39,11 +39,11 @@ export const useImageEditing = (): UseImageEditingReturn => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const clearError = useCallback(() => {
-    // Error clearing is handled by useGeminiAI hook
+    
     console.log('🧹 Clearing error state');
   }, []);
 
-  // Safe edit wrapper dengan error handling dan debugging
+  
   const safeEdit = useCallback(async (
     imageUri: string,
     editPrompt: string,
@@ -62,7 +62,7 @@ export const useImageEditing = (): UseImageEditingReturn => {
         throw new Error('No editing instructions provided');
       }
 
-      // Debug URI conversion issues
+      
       await debugImageUri(imageUri);
 
       const result = await editImage(imageUri, editPrompt);
@@ -77,11 +77,11 @@ export const useImageEditing = (): UseImageEditingReturn => {
 
     } catch (err) {
       console.error(`${operation} failed:`, err);
-      throw err; // Re-throw to be handled by the calling function
+      throw err; 
     }
   }, [editImage]);
 
-  // Remove background from image
+  
   const removeBackground = useCallback(async (imageUri: string): Promise<GalleryImage | null> => {
     setIsProcessing(true);
     try {
@@ -95,7 +95,7 @@ export const useImageEditing = (): UseImageEditingReturn => {
     }
   }, [safeEdit]);
 
-  // Enhance image quality
+  
   const enhanceImage = useCallback(async (imageUri: string): Promise<GalleryImage | null> => {
     setIsProcessing(true);
     try {
@@ -109,7 +109,7 @@ export const useImageEditing = (): UseImageEditingReturn => {
     }
   }, [safeEdit]);
 
-  // Adjust colors and lighting
+  
   const adjustColors = useCallback(async (
     imageUri: string,
     adjustments: string
@@ -126,7 +126,7 @@ export const useImageEditing = (): UseImageEditingReturn => {
     }
   }, [safeEdit]);
 
-  // Combine multiple images
+  
   const combineImages = useCallback(async (
     images: ImageAsset[],
     prompt: string
@@ -150,10 +150,10 @@ export const useImageEditing = (): UseImageEditingReturn => {
     }
   }, [generateImage]);
 
-  // Crop image with instructions
+  
   const cropImage = useCallback(async (
     imageUri: string,
-    // Menerima objek parameter, bukan hanya string
+    
     cropParams: { 
       mode: string; 
       region?: { x: number; y: number; width: number; height: number };
@@ -166,11 +166,11 @@ export const useImageEditing = (): UseImageEditingReturn => {
       const { mode, region, imageSize } = cropParams;
 
       if (region) {
-        // Membuat prompt yang sangat spesifik jika ada data region dari UI
+        
         const { x, y, width, height } = region;
         prompt = `The original image size is ${Math.round(imageSize.width)}x${Math.round(imageSize.height)} pixels. Crop this image to the exact pixel region defined by the bounding box: start at x=${Math.round(x)}, y=${Math.round(y)} with a width of ${Math.round(width)} and a height of ${Math.round(height)}. Retain the content within this box and discard everything outside. The final image should have dimensions of ${Math.round(width)}x${Math.round(height)}.`;
       } else {
-        // Fallback jika tidak ada interaksi visual (meskipun seharusnya tidak terjadi)
+        
         prompt = `Crop this image according to these instructions: ${mode}. Focus on the important parts, maintain proper composition, and ensure the cropped result looks balanced and professional.`;
       }
 
@@ -183,7 +183,7 @@ export const useImageEditing = (): UseImageEditingReturn => {
     }
   }, [safeEdit]);
 
-  // Apply artistic filters
+  
   const applyFilter = useCallback(async (
     imageUri: string,
     filterType: string
@@ -255,7 +255,7 @@ export const useImageEditing = (): UseImageEditingReturn => {
     }
   }, [safeEdit]);
 
-  // Custom editing with user-provided instructions
+  
   const customEdit = useCallback(async (
     imageUri: string,
     instructions: string
@@ -273,18 +273,18 @@ export const useImageEditing = (): UseImageEditingReturn => {
   }, [safeEdit]);
 
   return {
-    // Basic operations
+    
     removeBackground,
     enhanceImage,
     adjustColors,
     
-    // Advanced operations
+    
     combineImages,
     cropImage,
     applyFilter,
     customEdit,
     
-    // State
+    
     isProcessing: isLoading || isProcessing,
     error,
     clearError
