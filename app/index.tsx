@@ -4,10 +4,12 @@ import {
   ImageRecord,
   SupabaseImageServiceRN,
 } from "@/services/supabaseService";
+import { supabase } from "@/utils/supabase";
 import { Ionicons } from "@expo/vector-icons";
+import * as FileSystem from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
-import React, { useEffect, useState } from "react";
-import { Alert, Text, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { Alert, Animated, Text, View } from "react-native";
 import MainScreen from "../components/MainScreen";
 import QuickEditScreen from "../components/QuickEditScreen";
 import { ImageAsset } from "../helper/QuickEdit/types";
@@ -17,16 +19,40 @@ export interface GalleryImage {
   uri: string;
   supabaseRecord?: ImageRecord;
 }
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const convertFileUriToDataUrl = async (uri: string) => {
+  try {
+    const base64 = await FileSystem.readAsStringAsync(uri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+    // Asumsi format adalah jpeg karena hook AI kita menyimpannya sebagai jpeg
+    return `data:image/jpeg;base64,${base64}`;
+  } catch (e) {
+    console.error("Failed to convert file URI to data URL", e);
+    return null;
+  }
+};
 
 const App = () => {
-  // State utama aplikasi
   const [currentView, setCurrentView] = useState<"main" | "quickEdit">("main");
   const [quickEditImage, setQuickEditImage] = useState<ImageAsset | null>(null);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [isLoadingImages, setIsLoadingImages] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isBusy, setIsBusy] = useState(false);
+  const animatedProgress = useRef(new Animated.Value(0)).current;
+  const [progress, setProgress] = useState(0);
 
-  // AI Hooks
-  const { generateImage, isLoading: aiLoading } = useGeminiAI();
+  useEffect(() => {
+    Animated.timing(animatedProgress, {
+      toValue: progress,
+      duration: 400,
+      useNativeDriver: false,
+    }).start();
+  }, [progress, animatedProgress]);
+
+  const { generateImage } = useGeminiAI();
   const {
     removeBackground,
     enhanceImage,
@@ -36,22 +62,48 @@ const App = () => {
     isProcessing: editLoading,
   } = useImageEditing();
 
-  // Separate loading states for different contexts
-  const isGenerating = aiLoading || editLoading;
   const isInitialLoading = isLoadingImages;
-  const isAnyLoading = isGenerating || isInitialLoading;
 
-  // Load real data from Supabase on mount
   useEffect(() => {
-    loadGalleryImages();
+    const setupUser = async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (session) {
+          console.log("Existing user session found:", session.user.id);
+          setUserId(session.user.id);
+        } else {
+          const { data, error } = await supabase.auth.signInAnonymously();
+          if (error) {
+            throw error;
+          }
+
+          if (data.user) {
+            console.log("New anonymous user signed in:", data.user.id);
+            setUserId(data.user.id);
+          } else {
+            throw new Error("Anonymous sign in did not return a user.");
+          }
+        }
+      } catch (e) {
+        console.error("User setup failed:", e);
+        Alert.alert(
+          "Initialization Error",
+          "Could not initialize user session."
+        );
+      }
+    };
+    setupUser();
   }, []);
 
-  const loadGalleryImages = async () => {
+  const loadGalleryImages = async (currentUserId: string) => {
     try {
       setIsLoadingImages(true);
-      const images = await SupabaseImageServiceRN.getAllImages();
+      const images =
+        await SupabaseImageServiceRN.getImagesForUser(currentUserId);
 
-      // Convert Supabase records to GalleryImage format
       const galleryImages: GalleryImage[] = images.map((record) => ({
         id: record.id || Date.now(),
         uri: record.url,
@@ -67,16 +119,19 @@ const App = () => {
     }
   };
 
-  // Fungsi untuk kembali ke layar utama
+  useEffect(() => {
+    if (userId) {
+      loadGalleryImages(userId);
+    }
+  }, [userId]);
+
   const backToHome = () => {
     setQuickEditImage(null);
     setCurrentView("main");
   };
 
-  // Fungsi untuk memilih gambar dari galeri (versi React Native)
   const pickImage = async (onSuccess: (asset: ImageAsset) => void) => {
     try {
-      // Request permissions
       const { status } =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
@@ -89,16 +144,16 @@ const App = () => {
 
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: false, // Disable cropping
+        allowsEditing: false,
         quality: 1,
       });
 
       if (!result.canceled) {
         const asset = {
           uri: result.assets[0].uri,
-          base64: null, // Will be set if needed for API calls
-          width: 1024, // Default width
-          height: 1024, // Default height
+          base64: null,
+          width: 1024,
+          height: 1024,
         };
         onSuccess(asset);
       }
@@ -108,7 +163,6 @@ const App = () => {
     }
   };
 
-  // Fungsi untuk menangani 'Quick Edit'
   const handleQuickEditPress = () => {
     console.log("Quick Edit pressed - opening image picker");
     pickImage((asset) => {
@@ -121,7 +175,6 @@ const App = () => {
     });
   };
 
-  // Fungsi untuk re-select image dari Quick Edit
   const handleRePickImage = () => {
     console.log("Re-picking image from Quick Edit");
     pickImage((asset) => {
@@ -130,7 +183,6 @@ const App = () => {
     });
   };
 
-  // Fungsi untuk edit gambar dari gallery
   const handleEditImage = (image: GalleryImage) => {
     setQuickEditImage({
       uri: image.uri,
@@ -141,79 +193,77 @@ const App = () => {
     setCurrentView("quickEdit");
   };
 
-  // Real AI-powered image generation with Supabase integration
   const generateWithNanoBanana = async (
     prompt: string,
     images: { uri: string; base64?: string | null }[] = []
   ): Promise<void> => {
+    setIsBusy(true);
+    setProgress(10);
     try {
+      await delay(50);
+      setProgress(50);
       const newImage = await generateImage(prompt, images);
-      if (newImage) {
-        // Save to Supabase first
-        if (newImage.uri.startsWith("data:image/")) {
-          const saveResult = await SupabaseImageServiceRN.uploadAndSaveImage(
-            newImage.uri
+
+      if (newImage && newImage.uri) {
+        const tempImage: GalleryImage = {
+          ...newImage,
+          supabaseRecord: undefined,
+        };
+        setGalleryImages((prev) => [tempImage, ...prev]);
+
+        await delay(50);
+        setProgress(90);
+        const dataUrl = await convertFileUriToDataUrl(newImage.uri);
+        if (!dataUrl) throw new Error("Failed to prepare image for upload.");
+
+        const saveResult = await SupabaseImageServiceRN.uploadAndSaveImage(
+          dataUrl,
+          userId as string
+        );
+
+        if (saveResult.success && saveResult.record) {
+          const finalImage: GalleryImage = {
+            ...newImage,
+            uri: saveResult.record.url,
+            supabaseRecord: saveResult.record,
+          };
+          setGalleryImages((prev) =>
+            prev.map((img) => (img.id === tempImage.id ? finalImage : img))
           );
-          if (saveResult.success && saveResult.record) {
-            // Update image with Supabase record
-            const imageWithRecord: GalleryImage = {
-              ...newImage,
-              supabaseRecord: saveResult.record,
-            };
-            setGalleryImages((prev) => [imageWithRecord, ...prev]);
-
-            if (currentView === "quickEdit") {
-              setQuickEditImage({
-                uri: newImage.uri,
-                width: 1024,
-                height: 1024,
-                base64: null,
-              });
-            }
-
-            Alert.alert("Success", "Image generated and saved to cloud!");
-          } else {
-            // Fallback: add without Supabase record
-            setGalleryImages((prev) => [newImage, ...prev]);
-            if (currentView === "quickEdit") {
-              setQuickEditImage({
-                uri: newImage.uri,
-                width: 1024,
-                height: 1024,
-                base64: null,
-              });
-            }
-            Alert.alert("Success", "Image generated successfully!");
-          }
-        } else {
-          // Image is already a URL, just add to gallery
-          setGalleryImages((prev) => [newImage, ...prev]);
           if (currentView === "quickEdit") {
             setQuickEditImage({
-              uri: newImage.uri,
+              uri: finalImage.uri,
               width: 1024,
               height: 1024,
               base64: null,
             });
           }
-          Alert.alert("Success", "Image generated successfully!");
         }
+        setProgress(100);
       }
     } catch (err) {
       console.error("Error generating image:", err);
       Alert.alert("Error", "Failed to generate image. Please try again.");
+    } finally {
+      setTimeout(() => {
+        setIsBusy(false);
+        setProgress(0);
+        animatedProgress.setValue(0);
+      }, 500);
     }
   };
 
-  // Real AI-powered image editing functions
   const handleImageEdit = async (
     action: string,
     imageUri: string,
     params?: any
-  ) => {
+  ): Promise<ImageAsset | null> => {
+    setIsBusy(true);
+    setProgress(10);
     try {
+      await delay(50);
+      setProgress(50);
       let editedImage: GalleryImage | null = null;
-
       switch (action) {
         case "removeBackground":
           editedImage = await removeBackground(imageUri);
@@ -224,32 +274,41 @@ const App = () => {
         case "adjust":
           editedImage = await adjustColors(
             imageUri,
-            params || "improve colors and lighting"
+            params || "improve colors"
           );
           break;
         case "crop":
-          editedImage = await cropImage(imageUri, params || "smart crop");
+          editedImage = await cropImage(imageUri, params);
           break;
         case "filter":
           editedImage = await applyFilter(imageUri, params || "enhance");
           break;
         default:
           console.log("Unknown edit action:", action);
-          return;
+          return null;
       }
 
       if (editedImage) {
-        setGalleryImages((prev) => [editedImage!, ...prev]);
-        setQuickEditImage({
-          uri: editedImage!.uri,
+        setGalleryImages((prev) => [editedImage, ...prev]);
+        setProgress(100);
+        return {
+          uri: editedImage.uri,
           width: 1024,
           height: 1024,
           base64: null,
-        });
+        };
       }
+      return null;
     } catch (err) {
       console.error("Error editing image:", err);
       Alert.alert("Error", "Failed to edit image. Please try again.");
+      return null;
+    } finally {
+      setTimeout(() => {
+        setIsBusy(false);
+        setProgress(0);
+        animatedProgress.setValue(0);
+      }, 500);
     }
   };
 
@@ -261,7 +320,7 @@ const App = () => {
           galleryImages={galleryImages}
           onEditImage={handleEditImage}
           onGenerate={generateWithNanoBanana}
-          isLoading={isGenerating}
+          isLoading={isBusy}
           isInitialLoading={isInitialLoading}
         />
       ) : (
@@ -271,70 +330,48 @@ const App = () => {
           onGenerate={generateWithNanoBanana}
           onImageEdit={handleImageEdit}
           onRePickImage={handleRePickImage}
-          isLoading={isGenerating}
+          isLoading={isBusy}
         />
       )}
 
-      {/* Beautiful Generation Modal */}
-      {isGenerating && (
+      {isBusy && (
         <View className="absolute inset-0 bg-black/80 flex justify-center items-center z-50">
           <View className="bg-zinc-900 border border-zinc-700 rounded-3xl p-8 mx-6 max-w-sm w-full">
-            {/* Animated Icon */}
             <View className="flex justify-center items-center mb-6">
               <View className="relative">
                 <View className="w-20 h-20 bg-purple-600 rounded-full flex justify-center items-center">
                   <Ionicons name="sparkles" size={32} color="white" />
                 </View>
-                {/* Pulsing animation effect */}
                 <View className="absolute inset-0 w-20 h-20 bg-purple-400 rounded-full animate-pulse opacity-30" />
               </View>
             </View>
-
-            {/* Title */}
             <Text className="text-white text-2xl font-bold text-center mb-2">
               Creating Magic
             </Text>
-
-            {/* Subtitle */}
             <Text className="text-zinc-400 text-base text-center mb-6">
-              AI is generating your image...
+              AI is processing your request...
             </Text>
-
-            {/* Progress Steps */}
-            <View className="space-y-3 mb-6">
-              <View className="flex-row items-center">
-                <View className="w-6 h-6 bg-purple-600 rounded-full flex justify-center items-center mr-3">
-                  <Ionicons name="checkmark" size={14} color="white" />
-                </View>
-                <Text className="text-zinc-300 text-sm">Processing prompt</Text>
-              </View>
-              <View className="flex-row items-center">
-                <View className="w-6 h-6 bg-purple-600 rounded-full flex justify-center items-center mr-3">
-                  <Ionicons name="checkmark" size={14} color="white" />
-                </View>
-                <Text className="text-zinc-300 text-sm">
-                  Analyzing reference images
-                </Text>
-              </View>
-              <View className="flex-row items-center">
-                <View className="w-6 h-6 bg-purple-500 rounded-full flex justify-center items-center mr-3 animate-pulse">
-                  <Ionicons name="sparkles" size={14} color="white" />
-                </View>
-                <Text className="text-purple-300 text-sm font-medium">
-                  Generating image
-                </Text>
-              </View>
-            </View>
-
-            {/* Progress Bar */}
-            <View className="w-full bg-zinc-700 rounded-full h-2 mb-4">
-              <View
-                className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full animate-pulse"
-                style={{ width: "70%" }}
+            <View
+              style={{
+                width: "100%",
+                height: 8,
+                backgroundColor: "#3f3f46",
+                borderRadius: 9999,
+                marginBottom: 16,
+              }}
+            >
+              <Animated.View
+                style={[
+                  { height: 8, borderRadius: 9999, backgroundColor: "#a855f7" },
+                  {
+                    width: animatedProgress.interpolate({
+                      inputRange: [0, 100],
+                      outputRange: ["0%", "100%"],
+                    }),
+                  },
+                ]}
               />
             </View>
-
-            {/* Fun Message */}
             <Text className="text-zinc-500 text-sm text-center italic">
               &ldquo;Art takes time, but magic is worth waiting for ✨&rdquo;
             </Text>

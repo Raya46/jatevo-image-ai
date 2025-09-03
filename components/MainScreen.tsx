@@ -1,4 +1,3 @@
-// MainScreen dengan SafeAreaView + bottom inset aware
 import { useBatchDownload, useImageDownload } from "@/hooks/useImageDownload";
 import { ImageRecord } from "@/services/supabaseService";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
@@ -13,7 +12,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 interface GalleryImage {
   id: number;
@@ -43,7 +45,6 @@ const MainScreen: React.FC<MainScreenProps> = ({
   isLoading,
   isInitialLoading,
 }) => {
-  // ✅ Pakai insets untuk padding bawah dinamis
   const insets = useSafeAreaInsets();
 
   const handleGenerate = async (
@@ -67,14 +68,12 @@ const MainScreen: React.FC<MainScreenProps> = ({
   };
 
   return (
-    // ✅ SafeAreaView membungkus seluruh screen (edges semua sisi)
     <SafeAreaView
       style={{ flex: 1, backgroundColor: "black" }}
       edges={["top", "bottom", "left", "right"]}
     >
       <ScrollView
         className="flex-1 bg-black p-4"
-        // ✅ Pastikan konten tidak ketumpuk home indicator
         contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
         showsVerticalScrollIndicator={false}
       >
@@ -119,7 +118,6 @@ const MainScreen: React.FC<MainScreenProps> = ({
   );
 };
 
-// Prompt Engine Component (sama seperti sebelumnya)
 const PromptEngine: React.FC<{
   onGenerate: (prompt: string, images: ImageAsset[]) => void;
   isLoading: boolean;
@@ -310,7 +308,6 @@ const PromptEngine: React.FC<{
   );
 };
 
-// Output Gallery dengan Download Management
 const OutputGalleryWithDownload: React.FC<{
   galleryImages: GalleryImage[];
   onEditImage: (image: GalleryImage) => void;
@@ -484,13 +481,6 @@ const OutputGalleryWithDownload: React.FC<{
                         />
                       </TouchableOpacity>
                     </View>
-                  </View>
-
-                  {/* Status Indicators */}
-                  <View className="absolute top-2 left-2 bg-black/70 px-2 py-1 rounded">
-                    <Text className="text-white text-xs font-mono">
-                      #{img.id}
-                    </Text>
                   </View>
 
                   <View className="absolute top-2 right-2">

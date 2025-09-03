@@ -1,4 +1,4 @@
-// services/imageDownloadService.ts
+
 import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
 import { Alert, Linking, Platform } from 'react-native';
@@ -17,14 +17,11 @@ export interface DownloadResult {
 }
 
 export class ImageDownloadService {
-  
-  /**
-   * Request permissions for saving to gallery
-   */
+
   static async requestPermissions(): Promise<boolean> {
     try {
       if (Platform.OS === 'android') {
-        // Android needs WRITE_EXTERNAL_STORAGE permission
+        
         const { status } = await MediaLibrary.requestPermissionsAsync();
         
         if (status !== 'granted') {
@@ -45,7 +42,7 @@ export class ImageDownloadService {
           return false;
         }
       } else if (Platform.OS === 'ios') {
-        // iOS automatically requests permission when saving
+        
         const { status } = await MediaLibrary.requestPermissionsAsync();
         
         if (status !== 'granted') {
@@ -74,17 +71,12 @@ export class ImageDownloadService {
     }
   }
 
-  /**
-   * Generate filename for downloaded image
-   */
+
   static generateFileName(imageId: number): string {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     return `JATEVO_${imageId}_${timestamp}.png`;
   }
 
-  /**
-   * Download data URL image to gallery
-   */
   static async downloadDataUrlImage(
     dataUrl: string, 
     imageId: number
@@ -92,7 +84,6 @@ export class ImageDownloadService {
     try {
       console.log('🔄 Starting data URL image download...');
       
-      // Check permissions
       const hasPermission = await this.requestPermissions();
       if (!hasPermission) {
         return {
@@ -106,26 +97,26 @@ export class ImageDownloadService {
       
       console.log('📁 Saving to:', fileUri);
 
-      // Extract base64 data from data URL
+      
       const base64Data = dataUrl.split(',')[1];
       
       if (!base64Data) {
         throw new Error('Invalid data URL format');
       }
 
-      // Write base64 to file
+      
       await FileSystem.writeAsStringAsync(fileUri, base64Data, {
         encoding: FileSystem.EncodingType.Base64,
       });
 
       console.log('✅ File saved to temp location');
 
-      // Save to media library
+      
       await MediaLibrary.saveToLibraryAsync(fileUri);
 
       console.log('✅ Image saved to gallery');
 
-      // Clean up temporary file
+      
       await FileSystem.deleteAsync(fileUri, { idempotent: true });
 
       console.log('🧹 Temporary file cleaned up');
@@ -157,7 +148,7 @@ export class ImageDownloadService {
       console.log('🔄 Starting remote image download...');
       console.log('🔗 URL:', imageUrl);
       
-      // Check permissions
+      
       const hasPermission = await this.requestPermissions();
       if (!hasPermission) {
         return {
@@ -171,7 +162,7 @@ export class ImageDownloadService {
       
       console.log('📁 Downloading to:', fileUri);
 
-      // Download file
+      
       const downloadResult = await FileSystem.downloadAsync(imageUrl, fileUri);
       
       if (downloadResult.status !== 200) {
@@ -180,12 +171,12 @@ export class ImageDownloadService {
 
       console.log('✅ File downloaded successfully');
 
-      // Save to media library
+      
       await MediaLibrary.saveToLibraryAsync(fileUri);
 
       console.log('✅ Image saved to gallery');
 
-      // Clean up temporary file
+      
       await FileSystem.deleteAsync(fileUri, { idempotent: true });
 
       console.log('🧹 Temporary file cleaned up');
@@ -217,10 +208,10 @@ export class ImageDownloadService {
       let result: DownloadResult;
 
       if (image.uri.startsWith('data:')) {
-        // Handle data URL
+        
         result = await this.downloadDataUrlImage(image.uri, image.id);
       } else {
-        // Handle remote URL
+        
         result = await this.downloadRemoteImage(image.uri, image.id);
       }
 
@@ -252,7 +243,7 @@ export class ImageDownloadService {
     try {
       console.log('📥 Starting download with progress tracking...');
       
-      // Check permissions first
+      
       const hasPermission = await this.requestPermissions();
       if (!hasPermission) {
         return {
@@ -262,7 +253,7 @@ export class ImageDownloadService {
       }
 
       if (image.uri.startsWith('data:')) {
-        // Data URL downloads are usually fast, simulate progress
+        
         if (onProgress) {
           onProgress(50);
           await new Promise(resolve => setTimeout(resolve, 100));
@@ -270,7 +261,7 @@ export class ImageDownloadService {
         }
         return await this.downloadDataUrlImage(image.uri, image.id);
       } else {
-        // Remote URL download with progress
+        
         const fileName = this.generateFileName(image.id);
         const fileUri = `${FileSystem.documentDirectory}${fileName}`;
         
@@ -290,10 +281,10 @@ export class ImageDownloadService {
           throw new Error(`Download failed with status: ${result?.status}`);
         }
 
-        // Save to gallery
+        
         await MediaLibrary.saveToLibraryAsync(fileUri);
 
-        // Clean up
+        
         await FileSystem.deleteAsync(fileUri, { idempotent: true });
 
         return {
@@ -341,7 +332,7 @@ export class ImageDownloadService {
         };
       }
 
-      // Get recent assets (last 10)
+      
       const recentAssets = await MediaLibrary.getAssetsAsync({
         first: 10,
         mediaType: 'photo',

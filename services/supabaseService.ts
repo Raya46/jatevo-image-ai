@@ -4,6 +4,7 @@ export interface ImageRecord {
   id?: number;
   url: string;
   created_at?: string;
+  user_id?:string;
 }
 
 export class SupabaseImageServiceRN {
@@ -42,14 +43,14 @@ export class SupabaseImageServiceRN {
       const { base64, mimeType } = this.parseDataURL(dataURL);
       const fileName = this.generateFileName();
 
-      // Convert base64 to Uint8Array
+      
       const binaryString = atob(base64);
       const uint8Array = new Uint8Array(binaryString.length);
       for (let i = 0; i < binaryString.length; i++) {
         uint8Array[i] = binaryString.charCodeAt(i);
       }
 
-      // Upload using Supabase client
+      
       const { data, error } = await supabase.storage
         .from(this.BUCKET_NAME)
         .upload(fileName, uint8Array, {
@@ -63,7 +64,7 @@ export class SupabaseImageServiceRN {
         return null;
       }
 
-      // Get public URL
+      
       const { data: urlData } = supabase.storage
         .from(this.BUCKET_NAME)
         .getPublicUrl(data.path);
@@ -79,7 +80,7 @@ export class SupabaseImageServiceRN {
   /**
    * Save image URL to database table
    */
-  static async saveImageRecord(url: string): Promise<ImageRecord | null> {
+  static async saveImageRecord(url: string, userId:string): Promise<ImageRecord | null> {
     try {
       console.log('💾 Saving image record to database...');
       console.log('🔗 URL length:', url.length);
@@ -87,7 +88,7 @@ export class SupabaseImageServiceRN {
       
       const { data, error } = await supabase
         .from(this.TABLE_NAME)
-        .insert([{ url }])
+        .insert([{ url, user_id:userId }])
         .select()
         .single();
 
@@ -108,7 +109,7 @@ export class SupabaseImageServiceRN {
   /**
    * Complete workflow: Upload image and save record
    */
-  static async uploadAndSaveImage(dataURL: string): Promise<{
+  static async uploadAndSaveImage(dataURL: string, userId:string): Promise<{
     success: boolean;
     url?: string;
     record?: ImageRecord;
@@ -118,7 +119,7 @@ export class SupabaseImageServiceRN {
     try {
       console.log('🚀 Starting complete image save workflow...');
 
-      // Step 1: Upload image
+      
       const uploadedUrl = await this.uploadImage(dataURL);
       if (!uploadedUrl) {
         return {
@@ -130,8 +131,8 @@ export class SupabaseImageServiceRN {
       const method = uploadedUrl.startsWith('data:') ? 'fallback-dataurl' : 'storage-upload';
       console.log('📊 Upload method used:', method);
 
-      // Step 2: Save URL to database
-      const record = await this.saveImageRecord(uploadedUrl);
+      
+      const record = await this.saveImageRecord(uploadedUrl,userId);
       if (!record) {
         return {
           success: false,
@@ -159,26 +160,24 @@ export class SupabaseImageServiceRN {
     }
   }
 
-  /**
-   * Get all saved images from database
-   */
-  static async getAllImages(): Promise<ImageRecord[]> {
+   static async getImagesForUser(userId: string): Promise<ImageRecord[]> {
     try {
       const { data, error } = await supabase
         .from(this.TABLE_NAME)
         .select('*')
+        .eq('user_id', userId) // Filter berdasarkan user_id
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('❌ Failed to fetch images:', error);
+        console.error('❌ Failed to fetch user images:', error);
         return [];
       }
 
-      console.log(`📚 Fetched ${data?.length || 0} images from database`);
+      console.log(`📚 Fetched ${data?.length || 0} images for user ${userId}`);
       return data || [];
 
     } catch (error) {
-      console.error('❌ Failed to get images:', error);
+      console.error('❌ Failed to get user images:', error);
       return [];
     }
   }
@@ -190,10 +189,10 @@ export class SupabaseImageServiceRN {
     try {
       console.log('🗑️ Deleting image:', imageRecord.id);
       
-      // Only try to delete from storage if it's a storage URL
+      
       if (imageRecord.url && !imageRecord.url.startsWith('data:')) {
         try {
-          // Extract filename from URL
+          
           const urlParts = imageRecord.url.split('/');
           const fileName = urlParts[urlParts.length - 1];
 
@@ -211,7 +210,7 @@ export class SupabaseImageServiceRN {
         }
       }
 
-      // Delete from database
+      
       const { error: dbError } = await supabase
         .from(this.TABLE_NAME)
         .delete()

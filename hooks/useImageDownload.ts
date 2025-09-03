@@ -16,17 +16,16 @@ export interface GalleryImage {
 }
 
 export interface UseImageDownloadReturn {
-  // State
   downloads: Map<number, DownloadState>;
   totalActiveDownloads: number;
   
-  // Actions
+  
   downloadImage: (image: GalleryImage, showAlert?: boolean) => Promise<boolean>;
   cancelDownload: (imageId: number) => void;
   clearDownload: (imageId: number) => void;
   clearAllDownloads: () => void;
   
-  // Utilities
+  
   isDownloading: (imageId: number) => boolean;
   getProgress: (imageId: number) => number;
   getDownloadState: (imageId: number) => DownloadState | undefined;
@@ -36,7 +35,7 @@ export const useImageDownload = (): UseImageDownloadReturn => {
   const [downloads, setDownloads] = useState<Map<number, DownloadState>>(new Map());
   const cancelTokens = useRef<Map<number, boolean>>(new Map());
 
-  // Update download state
+  
   const updateDownloadState = useCallback((id: number, updates: Partial<DownloadState>) => {
     setDownloads(prev => {
       const newMap = new Map(prev);
@@ -46,7 +45,7 @@ export const useImageDownload = (): UseImageDownloadReturn => {
     });
   }, []);
 
-  // Clear download state
+  
   const clearDownload = useCallback((imageId: number) => {
     setDownloads(prev => {
       const newMap = new Map(prev);
@@ -56,24 +55,24 @@ export const useImageDownload = (): UseImageDownloadReturn => {
     cancelTokens.current.delete(imageId);
   }, []);
 
-  // Cancel download
+  
   const cancelDownload = useCallback((imageId: number) => {
     console.log('⏹️ Cancelling download for image:', imageId);
     cancelTokens.current.set(imageId, true);
     updateDownloadState(imageId, { isDownloading: false, progress: 0 });
     
-    // Clear after a short delay
+    
     setTimeout(() => clearDownload(imageId), 1000);
   }, [updateDownloadState, clearDownload]);
 
-  // Main download function
+  
   const downloadImage = useCallback(async (
     image: GalleryImage, 
     showAlert: boolean = true
   ): Promise<boolean> => {
     const imageId = image.id;
     
-    // Check if already downloading
+    
     const currentState = downloads.get(imageId);
     if (currentState?.isDownloading) {
       console.warn('⚠️ Image already downloading:', imageId);
@@ -83,7 +82,7 @@ export const useImageDownload = (): UseImageDownloadReturn => {
     try {
       console.log('📥 Starting download for image:', imageId);
       
-      // Initialize download state
+      
       updateDownloadState(imageId, {
         id: imageId,
         isDownloading: true,
@@ -91,14 +90,14 @@ export const useImageDownload = (): UseImageDownloadReturn => {
         error: undefined,
       });
 
-      // Reset cancel token
+      
       cancelTokens.current.set(imageId, false);
 
-      // Download with progress tracking
+      
       const result = await ImageDownloadService.downloadImageWithProgress(
         image,
         (progress) => {
-          // Check if cancelled
+          
           if (cancelTokens.current.get(imageId)) {
             console.log('⏹️ Download cancelled by user:', imageId);
             return;
@@ -109,7 +108,7 @@ export const useImageDownload = (): UseImageDownloadReturn => {
         }
       );
 
-      // Check if cancelled after completion
+      
       if (cancelTokens.current.get(imageId)) {
         console.log('⏹️ Download was cancelled:', imageId);
         clearDownload(imageId);
@@ -132,21 +131,21 @@ export const useImageDownload = (): UseImageDownloadReturn => {
               {
                 text: "View in Gallery",
                 onPress: () => {
-                  // Optional: Open native gallery
+                  
                   console.log("Opening gallery...");
                 }
               },
               {
                 text: "OK",
                 onPress: () => {
-                  // Clear download state after user acknowledges
+                  
                   setTimeout(() => clearDownload(imageId), 2000);
                 }
               }
             ]
           );
         } else {
-          // Auto-clear after success
+          
           setTimeout(() => clearDownload(imageId), 3000);
         }
 
@@ -215,14 +214,14 @@ export const useImageDownload = (): UseImageDownloadReturn => {
     }
   }, [downloads, updateDownloadState, clearDownload]);
 
-  // Clear all downloads
+  
   const clearAllDownloads = useCallback(() => {
     console.log('🧹 Clearing all downloads');
     setDownloads(new Map());
     cancelTokens.current.clear();
   }, []);
 
-  // Utility functions
+  
   const isDownloading = useCallback((imageId: number): boolean => {
     return downloads.get(imageId)?.isDownloading || false;
   }, [downloads]);
@@ -235,30 +234,30 @@ export const useImageDownload = (): UseImageDownloadReturn => {
     return downloads.get(imageId);
   }, [downloads]);
 
-  // Calculate total active downloads
+  
   const totalActiveDownloads = Array.from(downloads.values()).filter(
     state => state.isDownloading
   ).length;
 
   return {
-    // State
+    
     downloads,
     totalActiveDownloads,
     
-    // Actions
+    
     downloadImage,
     cancelDownload,
     clearDownload,
     clearAllDownloads,
     
-    // Utilities
+    
     isDownloading,
     getProgress,
     getDownloadState,
   };
 };
 
-// Hook untuk batch downloads
+
 export const useBatchDownload = () => {
   const singleDownload = useImageDownload();
   const [batchState, setBatchState] = useState<{
@@ -311,14 +310,14 @@ export const useBatchDownload = () => {
           results.success = false;
         }
 
-        // Update progress
+        
         setBatchState(prev => ({
           ...prev,
           completed: results.completed,
           errors: results.errors,
         }));
 
-        // Small delay between downloads to prevent overwhelming
+        
         if (i < images.length - 1) {
           await new Promise(resolve => setTimeout(resolve, 500));
         }
@@ -336,7 +335,7 @@ export const useBatchDownload = () => {
       isActive: false,
     }));
 
-    // Show completion alert
+    
     if (showProgress) {
       const message = results.success 
         ? `Successfully downloaded ${results.completed} images!`
@@ -374,7 +373,7 @@ export const useBatchDownload = () => {
   };
 };
 
-// Simplified hook untuk komponen yang hanya butuh download basic
+
 export const useSimpleDownload = () => {
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -407,7 +406,7 @@ export const useSimpleDownload = () => {
   };
 };
 
-// Hook untuk monitoring overall download statistics
+
 export const useDownloadStats = () => {
   const [stats, setStats] = useState<{
     totalDownloads: number;
