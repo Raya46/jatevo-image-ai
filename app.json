@@ -1,13 +1,50 @@
 {
   "expo": {
+    "name": "jatevo-image-gen",
+    "slug": "jatevo-image-gen",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/jatevo.png",
+    "scheme": "jatevoimagegen",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.rayk47.jatevoimagegen",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/jatevo.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/jatevo.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/jatevo.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
     "extra": {
+      "router": {},
       "eas": {
         "projectId": "91b90dd6-5edf-4c32-9d5b-2fa6673962f6"
       }
     },
-    "owner": "rayk47",
-    "android": {
-      "package": "com.rayk47.jatevoimagegen"
-    }
+    "owner": "rayk47"
   }
 }
