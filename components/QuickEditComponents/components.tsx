@@ -56,9 +56,19 @@ export const BottomActionBar: React.FC<{
   onReset: () => void;
   onNew: () => void;
   onSave: () => void;
+  onCancel: () => void;
   canUndo: boolean;
   canRedo: boolean;
-}> = ({ onUndo, onRedo, onReset, onNew, onSave, canUndo, canRedo }) => {
+}> = ({
+  onUndo,
+  onRedo,
+  onReset,
+  onNew,
+  onSave,
+  onCancel,
+  canUndo,
+  canRedo,
+}) => {
   const disabledColor = "#3f3f46";
   const enabledColor = "#a1a1aa";
 
@@ -111,6 +121,11 @@ export const BottomActionBar: React.FC<{
       <TouchableOpacity className="flex-col items-center" onPress={onSave}>
         <Ionicons name="download" size={24} color="white" />
         <Text className="text-white text-xs mt-1">Save</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity className="flex-col items-center" onPress={onCancel}>
+        <Ionicons name="close" size={24} color={enabledColor} />
+        <Text className="text-zinc-400 text-xs mt-1">Cancel</Text>
       </TouchableOpacity>
     </View>
   );

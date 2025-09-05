@@ -20,9 +20,7 @@ interface UseImageEditingReturn {
   enhanceImage: (imageUri: string) => Promise<GalleryImage | null>;
   adjustColors: (imageUri: string, adjustments: string) => Promise<GalleryImage | null>;
 
-  
-  combineImages: (images: ImageAsset[], prompt: string) => Promise<GalleryImage | null>;
-  cropImage: (imageUri: string, cropParams: any) => Promise<GalleryImage | null>; 
+  cropImage: (imageUri: string, cropParams: any) => Promise<GalleryImage | null>;
   applyFilter: (imageUri: string, filterType: string) => Promise<GalleryImage | null>;
 
   
@@ -127,28 +125,6 @@ export const useImageEditing = (): UseImageEditingReturn => {
   }, [safeEdit]);
 
   
-  const combineImages = useCallback(async (
-    images: ImageAsset[],
-    prompt: string
-  ): Promise<GalleryImage | null> => {
-    setIsProcessing(true);
-    try {
-      console.log('🔗 Combining', images.length, 'images...');
-      
-      if (images.length === 0) {
-        throw new Error('No images provided for combination');
-      }
-
-      const combinationPrompt = `Combine these ${images.length} images creatively according to this instruction: ${prompt}. Create a cohesive, well-composed final image that incorporates elements from all provided images.`;
-      
-      return await generateImage(combinationPrompt, images);
-    } catch (err) {
-      console.error('❌ Combine images failed:', err);
-      return null;
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [generateImage]);
 
   
   const cropImage = useCallback(async (
@@ -273,18 +249,16 @@ export const useImageEditing = (): UseImageEditingReturn => {
   }, [safeEdit]);
 
   return {
-    
+
     removeBackground,
     enhanceImage,
     adjustColors,
-    
-    
-    combineImages,
+
     cropImage,
     applyFilter,
     customEdit,
-    
-    
+
+
     isProcessing: isLoading || isProcessing,
     error,
     clearError

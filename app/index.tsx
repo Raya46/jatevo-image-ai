@@ -1,136 +1,69 @@
-import { useGeminiAI } from "@/hooks/useGeminiAI";
-import { useImageEditing } from "@/hooks/useImageEditing";
-import {
-  ImageRecord,
-  SupabaseImageServiceRN,
-} from "@/services/supabaseService";
-import { supabase } from "@/utils/supabase";
 import { Ionicons } from "@expo/vector-icons";
-import * as FileSystem from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
-import React, { useEffect, useRef, useState } from "react";
-import { Alert, Animated, Text, View } from "react-native";
-import MainScreen from "../components/MainScreen";
+import React, { useRef, useState } from "react";
+import {
+  Alert,
+  Animated,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import HomeCanvas from "../components/HomeCanvas";
+import LoadingModal from "../components/LoadingModal";
+import OutputGalleryWithDownload from "../components/OutputGalleryWithDownload";
+import PromptEngine from "../components/PromptEngine";
 import QuickEditScreen from "../components/QuickEditScreen";
+import { useAppContext } from "../contexts/AppContext";
 import { ImageAsset } from "../helper/QuickEdit/types";
 
-export interface GalleryImage {
-  id: number;
-  uri: string;
-  supabaseRecord?: ImageRecord;
-}
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+type TabType = "gallery" | "edit" | "prompt" | "canvas";
 
-const convertFileUriToDataUrl = async (uri: string) => {
-  try {
-    const base64 = await FileSystem.readAsStringAsync(uri, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
-    // Asumsi format adalah jpeg karena hook AI kita menyimpannya sebagai jpeg
-    return `data:image/jpeg;base64,${base64}`;
-  } catch (e) {
-    console.error("Failed to convert file URI to data URL", e);
-    return null;
-  }
-};
+const MainScreen = () => {
+  const {
+    galleryImages,
+    isLoadingImages,
+    loadGalleryImages,
+    generateWithPrompt,
+    handleImageEdit,
+    userId,
+    isGenerating,
+  } = useAppContext();
 
-const App = () => {
-  const [currentView, setCurrentView] = useState<"main" | "quickEdit">("main");
+  const [activeTab, setActiveTab] = useState<TabType>("gallery");
+  const [refreshing, setRefreshing] = useState(false);
   const [quickEditImage, setQuickEditImage] = useState<ImageAsset | null>(null);
-  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
-  const [isLoadingImages, setIsLoadingImages] = useState(true);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [isBusy, setIsBusy] = useState(false);
+  const [latestGeneratedImage, setLatestGeneratedImage] =
+    useState<ImageAsset | null>(null);
   const animatedProgress = useRef(new Animated.Value(0)).current;
-  const [progress, setProgress] = useState(0);
 
-  useEffect(() => {
+  React.useEffect(() => {
     Animated.timing(animatedProgress, {
-      toValue: progress,
+      toValue: 0,
       duration: 400,
       useNativeDriver: false,
     }).start();
-  }, [progress, animatedProgress]);
-
-  const { generateImage } = useGeminiAI();
-  const {
-    removeBackground,
-    enhanceImage,
-    adjustColors,
-    cropImage,
-    applyFilter,
-    isProcessing: editLoading,
-  } = useImageEditing();
-
-  const isInitialLoading = isLoadingImages;
-
-  useEffect(() => {
-    const setupUser = async () => {
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        if (session) {
-          console.log("Existing user session found:", session.user.id);
-          setUserId(session.user.id);
-        } else {
-          const { data, error } = await supabase.auth.signInAnonymously();
-          if (error) {
-            throw error;
-          }
-
-          if (data.user) {
-            console.log("New anonymous user signed in:", data.user.id);
-            setUserId(data.user.id);
-          } else {
-            throw new Error("Anonymous sign in did not return a user.");
-          }
-        }
-      } catch (e) {
-        console.error("User setup failed:", e);
-        Alert.alert(
-          "Initialization Error",
-          "Could not initialize user session."
-        );
-      }
-    };
-    setupUser();
   }, []);
 
-  const loadGalleryImages = async (currentUserId: string) => {
-    try {
-      setIsLoadingImages(true);
-      const images =
-        await SupabaseImageServiceRN.getImagesForUser(currentUserId);
-
-      const galleryImages: GalleryImage[] = images.map((record) => ({
-        id: record.id || Date.now(),
-        uri: record.url,
-        supabaseRecord: record,
-      }));
-
-      setGalleryImages(galleryImages);
-      console.log(`Loaded ${galleryImages.length} images from Supabase`);
-    } catch (error) {
-      console.error("Failed to load gallery images:", error);
-    } finally {
-      setIsLoadingImages(false);
-    }
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadGalleryImages();
+    setRefreshing(false);
   };
 
-  useEffect(() => {
-    if (userId) {
-      loadGalleryImages(userId);
-    }
-  }, [userId]);
-
-  const backToHome = () => {
-    setQuickEditImage(null);
-    setCurrentView("main");
+  const handleEditImage = (image: any) => {
+    setQuickEditImage({
+      uri: image.uri,
+      width: 1024,
+      height: 1024,
+      base64: null,
+    });
+    setActiveTab("edit");
   };
 
-  const pickImage = async (onSuccess: (asset: ImageAsset) => void) => {
+  const pickImage = async () => {
     try {
       const { status } =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -155,231 +88,163 @@ const App = () => {
           width: 1024,
           height: 1024,
         };
-        onSuccess(asset);
+        return asset;
       }
     } catch (error) {
       console.error("Error picking image:", error);
       Alert.alert("Error", "Failed to pick image");
     }
+    return null;
   };
 
-  const handleQuickEditPress = () => {
-    console.log("Quick Edit pressed - opening image picker");
-    pickImage((asset) => {
-      console.log("Image picked:", asset);
-      console.log("Image URI:", asset.uri);
-      console.log("Setting quickEditImage and switching to quickEdit view");
-      setQuickEditImage(asset);
-      setCurrentView("quickEdit");
-      console.log("State updated - currentView should be 'quickEdit'");
-    });
-  };
-
-  const handleRePickImage = () => {
-    console.log("Re-picking image from Quick Edit");
-    pickImage((asset) => {
-      console.log("New image picked:", asset);
-      setQuickEditImage(asset);
-    });
-  };
-
-  const handleEditImage = (image: GalleryImage) => {
-    setQuickEditImage({
-      uri: image.uri,
-      width: 1024,
-      height: 1024,
-      base64: null,
-    });
-    setCurrentView("quickEdit");
-  };
-
-  const generateWithNanoBanana = async (
-    prompt: string,
-    images: { uri: string; base64?: string | null }[] = []
-  ): Promise<void> => {
-    setIsBusy(true);
-    setProgress(10);
-    try {
-      await delay(50);
-      setProgress(50);
-      const newImage = await generateImage(prompt, images);
-
-      if (newImage && newImage.uri) {
-        const tempImage: GalleryImage = {
-          ...newImage,
-          supabaseRecord: undefined,
-        };
-        setGalleryImages((prev) => [tempImage, ...prev]);
-
-        await delay(50);
-        setProgress(90);
-        const dataUrl = await convertFileUriToDataUrl(newImage.uri);
-        if (!dataUrl) throw new Error("Failed to prepare image for upload.");
-
-        const saveResult = await SupabaseImageServiceRN.uploadAndSaveImage(
-          dataUrl,
-          userId as string
-        );
-
-        if (saveResult.success && saveResult.record) {
-          const finalImage: GalleryImage = {
-            ...newImage,
-            uri: saveResult.record.url,
-            supabaseRecord: saveResult.record,
-          };
-          setGalleryImages((prev) =>
-            prev.map((img) => (img.id === tempImage.id ? finalImage : img))
-          );
-          if (currentView === "quickEdit") {
-            setQuickEditImage({
-              uri: finalImage.uri,
-              width: 1024,
-              height: 1024,
-              base64: null,
-            });
-          }
-        }
-        setProgress(100);
-      }
-    } catch (err) {
-      console.error("Error generating image:", err);
-      Alert.alert("Error", "Failed to generate image. Please try again.");
-    } finally {
-      setTimeout(() => {
-        setIsBusy(false);
-        setProgress(0);
-        animatedProgress.setValue(0);
-      }, 500);
+  const handleQuickEditPick = async () => {
+    const image = await pickImage();
+    if (image) {
+      setQuickEditImage(image);
+      setActiveTab("edit");
     }
   };
 
-  const handleImageEdit = async (
-    action: string,
-    imageUri: string,
-    params?: any
-  ): Promise<ImageAsset | null> => {
-    setIsBusy(true);
-    setProgress(10);
+  const handleGenerateFromPrompt = async (
+    prompt: string,
+    images: ImageAsset[]
+  ) => {
     try {
-      await delay(50);
-      setProgress(50);
-      let editedImage: GalleryImage | null = null;
-      switch (action) {
-        case "removeBackground":
-          editedImage = await removeBackground(imageUri);
-          break;
-        case "enhance":
-          editedImage = await enhanceImage(imageUri);
-          break;
-        case "adjust":
-          editedImage = await adjustColors(
-            imageUri,
-            params || "improve colors"
-          );
-          break;
-        case "crop":
-          editedImage = await cropImage(imageUri, params);
-          break;
-        case "filter":
-          editedImage = await applyFilter(imageUri, params || "enhance");
-          break;
-        default:
-          console.log("Unknown edit action:", action);
-          return null;
+      const generatedImage = await generateWithPrompt(prompt, images);
+      if (generatedImage) {
+        setLatestGeneratedImage(generatedImage);
       }
+      return generatedImage;
+    } catch (error) {
+      console.error("Generation error:", error);
+      throw error;
+    }
+  };
 
-      if (editedImage) {
-        setGalleryImages((prev) => [editedImage, ...prev]);
-        setProgress(100);
-        return {
-          uri: editedImage.uri,
-          width: 1024,
-          height: 1024,
-          base64: null,
-        };
-      }
-      return null;
-    } catch (err) {
-      console.error("Error editing image:", err);
-      Alert.alert("Error", "Failed to edit image. Please try again.");
-      return null;
-    } finally {
-      setTimeout(() => {
-        setIsBusy(false);
-        setProgress(0);
-        animatedProgress.setValue(0);
-      }, 500);
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "gallery":
+        return (
+          <ScrollView
+            className="flex-1"
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+          >
+            <View className="p-4">
+              <OutputGalleryWithDownload
+                galleryImages={galleryImages}
+                onEditImage={handleEditImage}
+                isInitialLoading={isLoadingImages}
+              />
+            </View>
+          </ScrollView>
+        );
+
+      case "edit":
+        if (!quickEditImage) {
+          return (
+            <View className="flex-1 justify-center items-center p-4">
+              <TouchableOpacity
+                onPress={handleQuickEditPick}
+                className="bg-zinc-800 border-2 border-dashed border-zinc-600 rounded-xl p-8 w-full max-w-sm flex justify-center items-center"
+              >
+                <Text className="text-zinc-400 text-lg text-center mb-2">
+                  Select Image from Gallery
+                </Text>
+                <Text className="text-zinc-500 text-sm text-center">
+                  Choose an image to start editing
+                </Text>
+              </TouchableOpacity>
+            </View>
+          );
+        }
+
+        return (
+          <QuickEditScreen
+            quickEditImage={quickEditImage}
+            onBackToHome={() => setQuickEditImage(null)}
+            onGenerate={generateWithPrompt}
+            onImageEdit={handleImageEdit}
+            onRePickImage={handleQuickEditPick}
+            isLoading={false}
+            userId={userId}
+          />
+        );
+
+      case "prompt":
+        return (
+          <ScrollView
+            className="flex-1"
+            contentContainerStyle={{ paddingBottom: 100 }}
+          >
+            <View className="p-4">
+              <PromptEngine
+                onGenerate={handleGenerateFromPrompt}
+                onReset={() => setLatestGeneratedImage(null)}
+              />
+            </View>
+          </ScrollView>
+        );
+
+      case "canvas":
+        return <HomeCanvas />;
+
+      default:
+        return null;
     }
   };
 
   return (
-    <View className="flex-1 bg-black">
-      {currentView === "main" ? (
-        <MainScreen
-          onQuickEditPress={handleQuickEditPress}
-          galleryImages={galleryImages}
-          onEditImage={handleEditImage}
-          onGenerate={generateWithNanoBanana}
-          isLoading={isBusy}
-          isInitialLoading={isInitialLoading}
-        />
-      ) : (
-        <QuickEditScreen
-          quickEditImage={quickEditImage}
-          onBackToHome={backToHome}
-          onGenerate={generateWithNanoBanana}
-          onImageEdit={handleImageEdit}
-          onRePickImage={handleRePickImage}
-          isLoading={isBusy}
-        />
-      )}
+    <SafeAreaView className="flex-1 bg-black">
+      {/* Header */}
+      <View className="p-4 border-b border-zinc-800">
+        <Text className="text-white text-3xl font-bold text-center mb-2">
+          JATEVO IMAGE GEN AI
+        </Text>
 
-      {isBusy && (
-        <View className="absolute inset-0 bg-black/80 flex justify-center items-center z-50">
-          <View className="bg-zinc-900 border border-zinc-700 rounded-3xl p-8 mx-6 max-w-sm w-full">
-            <View className="flex justify-center items-center mb-6">
-              <View className="relative">
-                <View className="w-20 h-20 bg-purple-600 rounded-full flex justify-center items-center">
-                  <Ionicons name="sparkles" size={32} color="white" />
-                </View>
-                <View className="absolute inset-0 w-20 h-20 bg-purple-400 rounded-full animate-pulse opacity-30" />
-              </View>
-            </View>
-            <Text className="text-white text-2xl font-bold text-center mb-2">
-              Creating Magic
-            </Text>
-            <Text className="text-zinc-400 text-base text-center mb-6">
-              AI is processing your request...
-            </Text>
-            <View
-              style={{
-                width: "100%",
-                height: 8,
-                backgroundColor: "#3f3f46",
-                borderRadius: 9999,
-                marginBottom: 16,
-              }}
+        {/* Horizontal Tabs */}
+        <View className="flex-row bg-zinc-900 rounded-full p-1 mt-4">
+          {[
+            { id: "gallery" as TabType, label: "Gallery", icon: "images" },
+            { id: "edit" as TabType, label: "Edit", icon: "create" },
+            { id: "prompt" as TabType, label: "Prompt", icon: "sparkles" },
+            { id: "canvas" as TabType, label: "Canvas", icon: "color-palette" },
+          ].map((tab) => (
+            <TouchableOpacity
+              key={tab.id}
+              onPress={() => setActiveTab(tab.id)}
+              className={`flex-1 flex-row items-center justify-center p-3 rounded-full ${
+                activeTab === tab.id ? "bg-purple-600" : ""
+              }`}
             >
-              <Animated.View
-                style={[
-                  { height: 8, borderRadius: 9999, backgroundColor: "#a855f7" },
-                  {
-                    width: animatedProgress.interpolate({
-                      inputRange: [0, 100],
-                      outputRange: ["0%", "100%"],
-                    }),
-                  },
-                ]}
+              <Ionicons
+                name={tab.icon as any}
+                size={16}
+                color={activeTab === tab.id ? "white" : "#9ca3af"}
               />
-            </View>
-            <Text className="text-zinc-500 text-sm text-center italic">
-              &ldquo;Art takes time, but magic is worth waiting for ✨&rdquo;
-            </Text>
-          </View>
+              <Text
+                className={`ml-2 font-semibold text-sm ${
+                  activeTab === tab.id ? "text-white" : "text-zinc-400"
+                }`}
+              >
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
-      )}
-    </View>
+      </View>
+
+      {/* Tab Content */}
+      <View className="flex-1">{renderTabContent()}</View>
+
+      {/* Loading Modal */}
+      <LoadingModal
+        visible={isGenerating}
+        animatedProgress={animatedProgress}
+      />
+    </SafeAreaView>
   );
 };
 
-export default App;
+export default MainScreen;

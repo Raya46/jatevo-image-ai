@@ -1,5 +1,4 @@
 export const TABS = [
-  { id: "combine" as const, label: "Combine", icon: "layers" },
   { id: "retouch" as const, label: "Retouch", icon: "brush" },
   { id: "crop" as const, label: "Crop", icon: "crop" },
   { id: "adjust" as const, label: "Adjust", icon: "options" },
