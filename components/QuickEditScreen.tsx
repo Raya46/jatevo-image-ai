@@ -4,6 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
+  Animated,
   Image,
   Platform,
   Text,
@@ -17,12 +18,7 @@ import {
 } from "react-native-safe-area-context";
 
 import AdjustTab from "./QuickEditComponents/AdjustTab";
-import CombineTab from "./QuickEditComponents/CombineTab";
-import {
-  BottomActionBar,
-  Header,
-  TabBar,
-} from "./QuickEditComponents/components";
+import { BottomActionBar, TabBar } from "./QuickEditComponents/components";
 import CropTab from "./QuickEditComponents/CropTab";
 import FiltersTab from "./QuickEditComponents/FiltersTab";
 import RetouchTab from "./QuickEditComponents/RetouchTab";
@@ -34,17 +30,34 @@ import {
   TabType,
 } from "../helper/QuickEdit/types";
 import { useHistory } from "../hooks/useHistory";
+import { SupabaseImageServiceRN } from "../services/supabaseService";
+import LoadingModal from "./LoadingModal";
 import { InteractiveCropView } from "./QuickEditComponents/InteractiveCropView";
 
 const isSameImage = (a: ImageAsset | null, b: ImageAsset | null) =>
   a?.uri === b?.uri;
 
+const convertFileUriToDataUrl = async (uri: string) => {
+  try {
+    const base64 = await FileSystem.readAsStringAsync(uri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+    // Asumsi format adalah jpeg karena hook AI kita menyimpannya sebagai jpeg
+    return `data:image/jpeg;base64,${base64}`;
+  } catch (e) {
+    console.error("Failed to convert file URI to data URL", e);
+    return null;
+  }
+};
+
 interface ModifiedQuickEditScreenProps extends QuickEditScreenProps {
   onImageEdit: (
     action: string,
     imageUri: string,
-    params?: any
+    params?: any,
+    shouldSaveToGallery?: boolean
   ) => Promise<ImageAsset | null>;
+  userId?: string | null;
 }
 
 const QuickEditScreen: React.FC<ModifiedQuickEditScreenProps> = ({
@@ -54,6 +67,7 @@ const QuickEditScreen: React.FC<ModifiedQuickEditScreenProps> = ({
   onImageEdit,
   onRePickImage,
   isLoading,
+  userId,
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>("retouch");
   const insets = useSafeAreaInsets();
@@ -66,6 +80,30 @@ const QuickEditScreen: React.FC<ModifiedQuickEditScreenProps> = ({
   } | null>(null);
   const [cropRegion, setCropRegion] = useState<CropRegion | null>(null);
   const [cropMode, setCropMode] = useState<"free" | "1:1" | "16:9">("free");
+  const [isSaving, setIsSaving] = useState(false);
+  const animatedProgress = useRef(new Animated.Value(0)).current;
+
+  // Progress animation logic
+  const startProgressAnimation = () => {
+    animatedProgress.setValue(0);
+    Animated.timing(animatedProgress, {
+      toValue: 90,
+      duration: 1500,
+      useNativeDriver: false,
+    }).start();
+  };
+
+  const completeProgressAnimation = () => {
+    Animated.timing(animatedProgress, {
+      toValue: 100,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+  };
+
+  const resetProgressAnimation = () => {
+    animatedProgress.setValue(0);
+  };
 
   const prevPropImage = useRef<ImageAsset | null>(quickEditImage);
   useEffect(() => {
@@ -81,7 +119,13 @@ const QuickEditScreen: React.FC<ModifiedQuickEditScreenProps> = ({
     async (action: string, imageUri: string, params?: any) => {
       if (!onImageEdit) return;
 
-      const editedImageResult = await onImageEdit(action, imageUri, params);
+      // For intermediate edits in QuickEdit, don't save to gallery
+      const editedImageResult = await onImageEdit(
+        action,
+        imageUri,
+        params,
+        false
+      );
 
       if (editedImageResult && editedImageResult.uri) {
         push(editedImageResult);
@@ -103,8 +147,6 @@ const QuickEditScreen: React.FC<ModifiedQuickEditScreenProps> = ({
     };
 
     switch (activeTab) {
-      case "combine":
-        return <CombineTab onGenerate={onGenerate} isLoading={isLoading} />;
       case "retouch":
         return <RetouchTab onGenerate={onGenerate} {...commonProps} />;
       case "crop":
@@ -153,6 +195,9 @@ const QuickEditScreen: React.FC<ModifiedQuickEditScreenProps> = ({
         return;
       }
 
+      setIsSaving(true);
+      startProgressAnimation();
+
       let localUri = uri;
       if (/^https?:\/\//i.test(uri)) {
         const filename = `quickedit-${Date.now()}.jpg`;
@@ -161,22 +206,87 @@ const QuickEditScreen: React.FC<ModifiedQuickEditScreenProps> = ({
         localUri = dl.uri;
       }
 
+      // Save to gallery
       const { status } = await MediaLibrary.requestPermissionsAsync();
       if (status !== "granted") {
+        resetProgressAnimation();
         Alert.alert(
           "Permission required",
           "Allow Photos permission to save images."
         );
+        setIsSaving(false);
         return;
       }
 
+      // Progress: 30% - Gallery save
+      Animated.timing(animatedProgress, {
+        toValue: 40,
+        duration: 500,
+        useNativeDriver: false,
+      }).start();
+
       await MediaLibrary.saveToLibraryAsync(localUri);
-      Alert.alert("Saved", "Image saved to your gallery.");
+
+      // Progress: 50% - Prepare for cloud upload
+      Animated.timing(animatedProgress, {
+        toValue: 60,
+        duration: 300,
+        useNativeDriver: false,
+      }).start();
+
+      // Save to gallery and Supabase through the main app's handleImageEdit
+      if (onImageEdit && userId) {
+        try {
+          // Call onImageEdit with shouldSaveToGallery: true to add to gallery
+          await onImageEdit("save", localUri, null, true);
+          Alert.alert("Saved", "Image saved to your gallery and cloud.");
+        } catch (error) {
+          console.error("Failed to save through handleImageEdit:", error);
+          // Fallback: save directly to Supabase
+          const dataUrl = await convertFileUriToDataUrl(localUri);
+          if (dataUrl) {
+            const saveResult = await SupabaseImageServiceRN.uploadAndSaveImage(
+              dataUrl,
+              userId
+            );
+            if (saveResult.success) {
+              completeProgressAnimation();
+              setTimeout(() => {
+                Alert.alert("Saved", "Image saved to your gallery and cloud.");
+              }, 300);
+            } else {
+              completeProgressAnimation();
+              setTimeout(() => {
+                Alert.alert(
+                  "Saved",
+                  "Image saved to gallery, but failed to save to cloud."
+                );
+              }, 300);
+            }
+          } else {
+            Alert.alert(
+              "Saved",
+              "Image saved to gallery, but failed to prepare for cloud."
+            );
+          }
+        }
+      } else {
+        Alert.alert("Saved", "Image saved to your gallery.");
+      }
     } catch (e: any) {
       console.error(e);
       Alert.alert("Save failed", e?.message ?? "Unknown error");
+    } finally {
+      setTimeout(() => {
+        setIsSaving(false);
+        resetProgressAnimation();
+      }, 600);
     }
-  }, [present?.uri]);
+  }, [present?.uri, userId]);
+
+  const handleCancel = useCallback(() => {
+    onBackToHome();
+  }, [onBackToHome]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -185,8 +295,6 @@ const QuickEditScreen: React.FC<ModifiedQuickEditScreenProps> = ({
         edges={["top", "bottom", "left", "right"]}
       >
         <StatusBar style="light" />
-
-        <Header onBackToHome={onBackToHome} />
 
         <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
 
@@ -228,8 +336,16 @@ const QuickEditScreen: React.FC<ModifiedQuickEditScreenProps> = ({
           onReset={handleReset}
           onNew={handleNew}
           onSave={handleSave}
+          onCancel={handleCancel}
           canUndo={canUndo}
           canRedo={canRedo}
+        />
+
+        <LoadingModal
+          visible={isSaving}
+          title="Saving to Gallery"
+          message="Storing your edited image..."
+          animatedProgress={animatedProgress}
         />
       </SafeAreaView>
     </GestureHandlerRootView>
