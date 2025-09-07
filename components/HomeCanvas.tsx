@@ -5,6 +5,7 @@ import React, { useRef, useState } from "react";
 import {
   Alert,
   Image,
+  Animated as RNAnimated,
   SafeAreaView,
   Text,
   TouchableOpacity,
@@ -19,7 +20,6 @@ import Animated, {
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
-  withTiming,
 } from "react-native-reanimated";
 import { useAppContext } from "../contexts/AppContext";
 import { ImageAsset } from "../helper/QuickEdit/types";
@@ -30,19 +30,16 @@ import LoadingModal from "./LoadingModal";
 const GHOST_IMAGE_SIZE = 70;
 
 // Komponen ImageCard yang direstrukturisasi dengan logika gestur terpusat
-const ImageCard = ({
-  title,
-  image,
-  onSelect,
-  onLayout,
-  panGesture,
-}: {
-  title: string;
-  image: ImageAsset | null;
-  onSelect: () => void;
-  onLayout?: (event: any) => void;
-  panGesture?: ReturnType<typeof Gesture.Pan>;
-}) => {
+const ImageCard = React.forwardRef<
+  View,
+  {
+    title: string;
+    image: ImageAsset | null;
+    onSelect: () => void;
+    onLayout?: () => void;
+    panGesture?: ReturnType<typeof Gesture.Pan>;
+  }
+>(({ title, image, onSelect, onLayout, panGesture }, ref) => {
   // Gestur untuk menangani ketukan (tap)
   const tapGesture = Gesture.Tap().onEnd(() => {
     // Jalankan onSelect hanya jika tidak ada gambar (mode upload)
@@ -72,12 +69,14 @@ const ImageCard = ({
   );
 
   return (
-    <View className="w-[45%] items-center" onLayout={onLayout}>
+    <View ref={ref} className="w-[45%] items-center" onLayout={onLayout}>
       <Text className="text-lg text-gray-200 mb-2.5">{title}</Text>
       <GestureDetector gesture={activeGesture}>{cardContent}</GestureDetector>
     </View>
   );
-};
+});
+
+ImageCard.displayName = "ImageCard";
 
 const HomeCanvas: React.FC = () => {
   const { userId, loadGalleryImages } = useAppContext();
@@ -91,7 +90,7 @@ const HomeCanvas: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  const animatedProgress = useSharedValue(0);
+  const animatedProgress = new RNAnimated.Value(0);
 
   const isDragging = useSharedValue(false);
   const positionX = useSharedValue(-GHOST_IMAGE_SIZE);
@@ -104,17 +103,27 @@ const HomeCanvas: React.FC = () => {
     height: number;
   } | null>(null);
 
+  const sceneRef = useRef<View>(null);
+
   const startProgressAnimation = () => {
-    animatedProgress.value = 0;
-    animatedProgress.value = withTiming(90, { duration: 2500 });
+    animatedProgress.setValue(0);
+    RNAnimated.timing(animatedProgress, {
+      toValue: 90,
+      duration: 2500,
+      useNativeDriver: false,
+    }).start();
   };
 
   const completeProgressAnimation = () => {
-    animatedProgress.value = withTiming(100, { duration: 300 });
+    RNAnimated.timing(animatedProgress, {
+      toValue: 100,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
   };
 
   const resetProgressAnimation = () => {
-    animatedProgress.value = 0;
+    animatedProgress.setValue(0);
   };
 
   const pickImage = async (
@@ -304,11 +313,12 @@ const HomeCanvas: React.FC = () => {
           />
 
           <ImageCard
+            ref={sceneRef}
             title="Scene"
             image={sceneImage}
             onSelect={() => pickImage(setSceneImage, setOriginalSceneImage)}
-            onLayout={(event) => {
-              event.target.measure(
+            onLayout={() => {
+              sceneRef.current?.measure(
                 (
                   x: number,
                   y: number,
