@@ -63,64 +63,55 @@ export class ImageUriUtils {
     mimeType: string;
     info: ImageInfo;
   }> {
-    console.log('🔄 Converting URI to base64:', uri.substring(0, 100) + '...');
-    
     const info = this.analyzeUri(uri);
-    console.log('📊 URI Analysis:', info);
 
     try {
       let base64: string;
       let mimeType = info.mimeType || 'image/jpeg';
 
       if (info.isDataUrl) {
-        console.log('✅ Extracting base64 from data URL...');
         const parts = uri.split(',');
         if (parts.length !== 2) {
           throw new Error('Invalid data URL format');
         }
         base64 = parts[1];
-        
+
         if (!base64 || base64.length === 0) {
           throw new Error('Empty base64 data in data URL');
         }
       }
-      
+
       else if (uri.startsWith('file://') || uri.startsWith('content://')) {
-        console.log('🔄 Reading local file as base64...');
         base64 = await FileSystem.readAsStringAsync(uri, {
           encoding: FileSystem.EncodingType.Base64,
         });
-        
+
         if (!base64) {
           throw new Error('Failed to read local file as base64');
         }
       }
-      
+
       else if (uri.startsWith('http://') || uri.startsWith('https://')) {
-        console.log('🔄 Downloading remote image...');
-        
         const fileName = `temp_download_${Date.now()}.${info.format || 'jpg'}`;
         const localUri = `${FileSystem.cacheDirectory}${fileName}`;
-        
+
         const downloadResult = await FileSystem.downloadAsync(uri, localUri);
-        
+
         if (downloadResult.status !== 200) {
           throw new Error(`Download failed with status: ${downloadResult.status}`);
         }
 
-        console.log('✅ Download successful, converting to base64...');
-        
         base64 = await FileSystem.readAsStringAsync(localUri, {
           encoding: FileSystem.EncodingType.Base64,
         });
 
         await FileSystem.deleteAsync(localUri, { idempotent: true });
-        
+
         if (!base64) {
           throw new Error('Failed to convert downloaded file to base64');
         }
       }
-      
+
       else {
         throw new Error(`Unsupported URI format: ${uri.substring(0, 50)}...`);
       }
@@ -129,10 +120,6 @@ export class ImageUriUtils {
       if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64)) {
         throw new Error('Invalid base64 format detected');
       }
-
-      console.log('✅ Base64 conversion successful');
-      console.log('📊 Base64 length:', base64.length);
-      console.log('📊 Estimated size:', Math.round((base64.length * 3) / 4 / 1024), 'KB');
 
       return {
         base64,
@@ -210,20 +197,15 @@ export class ImageUriUtils {
    */
   static compressBase64IfNeeded(base64: string, maxSizeKB: number = 1024): string {
     const currentSizeKB = Math.round((base64.length * 3) / 4 / 1024);
-    
+
     if (currentSizeKB <= maxSizeKB) {
-      console.log(`Image size ${currentSizeKB}KB is within limit`);
       return base64;
     }
 
-    console.log(`Image size ${currentSizeKB}KB exceeds ${maxSizeKB}KB limit`);
-    
     // Simple compression by truncating (not ideal, but works as fallback)
     const targetLength = Math.floor((maxSizeKB * 1024 * 4) / 3);
     const compressed = base64.substring(0, targetLength);
-    
-    console.log(`Compressed to ${Math.round((compressed.length * 3) / 4 / 1024)}KB`);
-    
+
     return compressed;
   }
 
@@ -267,15 +249,13 @@ export class ImageUriUtils {
 // Enhanced conversion function untuk useGeminiAI
 export const convertUriToBase64Enhanced = async (uri: string): Promise<string> => {
   try {
-    console.log('Starting enhanced URI to base64 conversion...');
-    
     // Validate URI first
     if (!ImageUriUtils.isValidImageUri(uri)) {
       throw new Error('Invalid image URI provided');
     }
 
     const result = await ImageUriUtils.convertToBase64(uri);
-    
+
     // Validate the resulting base64
     if (!ImageUriUtils.isValidBase64(result.base64)) {
       throw new Error('Generated base64 is invalid');
@@ -284,7 +264,6 @@ export const convertUriToBase64Enhanced = async (uri: string): Promise<string> =
     // Compress if too large (Gemini has size limits)
     const compressedBase64 = ImageUriUtils.compressBase64IfNeeded(result.base64, 2048);
 
-    console.log('Enhanced conversion completed successfully');
     return compressedBase64;
 
   } catch (error) {
@@ -293,32 +272,4 @@ export const convertUriToBase64Enhanced = async (uri: string): Promise<string> =
   }
 };
 
-// Debugging utilities
-export const debugImageUri = async (uri: string) => {
-  console.log('=== IMAGE URI DEBUG ===');
-  console.log('URI:', uri.substring(0, 100) + '...');
-  
-  const info = ImageUriUtils.analyzeUri(uri);
-  console.log('Analysis:', info);
-  
-  const isValid = ImageUriUtils.isValidImageUri(uri);
-  console.log('Valid:', isValid);
-  
-  if (uri.startsWith('file://')) {
-    const fileInfo = await ImageUriUtils.getFileInfo(uri);
-    console.log('File Info:', fileInfo);
-  }
-  
-  try {
-    const { base64, mimeType } = await ImageUriUtils.convertToBase64(uri);
-    console.log('Conversion Success:', {
-      mimeType,
-      base64Length: base64.length,
-      estimatedSizeKB: Math.round((base64.length * 3) / 4 / 1024)
-    });
-  } catch (error) {
-    console.log('Conversion Failed:', error);
-  }
-  
-  console.log('=== END DEBUG ===');
-};
+// Debugging utilities removed for performance

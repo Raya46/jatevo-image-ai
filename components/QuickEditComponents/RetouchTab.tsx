@@ -56,16 +56,7 @@ const RetouchTab: React.FC<RetouchTabProps> = ({
     inputRef.current?.blur();
     Keyboard.dismiss();
 
-    onImageEdit(
-      "adjust",
-      quickEditImage.uri,
-      prompt.trim(),
-      false,
-      (progress: number) => {
-        // Progress callback will be handled by the parent component
-        console.log(`🎨 RetouchTab progress callback: ${progress}%`);
-      }
-    );
+    onImageEdit("adjust", quickEditImage.uri, prompt.trim(), false);
   }, [canExecute, quickEditImage, onImageEdit, prompt]);
 
   // Use bottom inset to avoid double-padding on devices with a home indicator

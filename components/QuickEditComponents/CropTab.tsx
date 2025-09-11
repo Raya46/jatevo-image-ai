@@ -41,16 +41,7 @@ const CropTab: React.FC<CropTabProps> = ({
           height: originalImage.height ?? imageLayout.height,
         },
       };
-      onImageEdit(
-        "crop",
-        quickEditImage.uri,
-        cropParams,
-        false,
-        (progress: number) => {
-          // Progress callback will be handled by the parent component
-          console.log(`🎨 CropTab progress callback: ${progress}%`);
-        }
-      );
+      onImageEdit("crop", quickEditImage.uri, cropParams, false);
     }
   };
 

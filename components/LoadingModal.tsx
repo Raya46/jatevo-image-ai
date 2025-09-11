@@ -51,18 +51,6 @@ const LoadingModal: React.FC<LoadingModalProps> = ({
     }
   }, [directProgress, progressBarWidth]);
 
-  // Use direct progress if provided, otherwise use animated progress
-  const progress =
-    directProgress !== undefined ? directProgress : currentProgress;
-
-  // Debug logging
-  console.log("🎯 LoadingModal progress values:", {
-    directProgress,
-    currentProgress,
-    finalProgress: progress,
-    visible,
-  });
-
   if (!visible) return null;
 
   return (

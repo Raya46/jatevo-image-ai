@@ -124,13 +124,11 @@ const PromptEngine: React.FC<PromptEngineProps> = ({ onGenerate, onReset }) => {
 
     const imagesToUse = engineMode === "image-to-image" ? refImages : [];
     try {
-      console.log("🎯 PromptEngine calling onGenerate with progress callback");
       const generatedImage = await onGenerate(
         prompt.trim(),
         imagesToUse,
         (progress: number) => {
           // Update progress bar with real progress from generation
-          console.log("🎯 PromptEngine progress callback received:", progress);
           setCurrentProgress(progress);
           // Update the animated progress to match real progress
           animatedProgress.setValue(progress);

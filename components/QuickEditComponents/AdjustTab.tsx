@@ -16,16 +16,7 @@ const AdjustTab: React.FC<TabProps> = ({
 
     const adjustment = customPrompt.trim() || selectedPreset;
     if (adjustment) {
-      onImageEdit(
-        "adjust",
-        quickEditImage.uri,
-        adjustment,
-        false,
-        (progress: number) => {
-          // Progress callback will be handled by the parent component
-          console.log(`Adjust progress: ${progress}%`);
-        }
-      );
+      onImageEdit("adjust", quickEditImage.uri, adjustment, false);
     }
   };
 

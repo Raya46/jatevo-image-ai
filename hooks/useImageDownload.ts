@@ -57,11 +57,9 @@ export const useImageDownload = (): UseImageDownloadReturn => {
 
   
   const cancelDownload = useCallback((imageId: number) => {
-    console.log('⏹️ Cancelling download for image:', imageId);
     cancelTokens.current.set(imageId, true);
     updateDownloadState(imageId, { isDownloading: false, progress: 0 });
-    
-    
+
     setTimeout(() => clearDownload(imageId), 1000);
   }, [updateDownloadState, clearDownload]);
 
@@ -75,12 +73,10 @@ export const useImageDownload = (): UseImageDownloadReturn => {
     
     const currentState = downloads.get(imageId);
     if (currentState?.isDownloading) {
-      console.warn('⚠️ Image already downloading:', imageId);
       return false;
     }
 
     try {
-      console.log('📥 Starting download for image:', imageId);
       
       
       updateDownloadState(imageId, {
@@ -97,26 +93,21 @@ export const useImageDownload = (): UseImageDownloadReturn => {
       const result = await ImageDownloadService.downloadImageWithProgress(
         image,
         (progress) => {
-          
           if (cancelTokens.current.get(imageId)) {
-            console.log('⏹️ Download cancelled by user:', imageId);
             return;
           }
 
-          console.log(`📊 Download progress ${imageId}: ${progress}%`);
           updateDownloadState(imageId, { progress });
         }
       );
 
       
       if (cancelTokens.current.get(imageId)) {
-        console.log('⏹️ Download was cancelled:', imageId);
         clearDownload(imageId);
         return false;
       }
 
       if (result.success) {
-        console.log('✅ Download completed:', imageId);
         
         updateDownloadState(imageId, {
           isDownloading: false,
@@ -131,14 +122,12 @@ export const useImageDownload = (): UseImageDownloadReturn => {
               {
                 text: "View in Gallery",
                 onPress: () => {
-                  
-                  console.log("Opening gallery...");
+                  // Open gallery functionality can be added here
                 }
               },
               {
                 text: "OK",
                 onPress: () => {
-                  
                   setTimeout(() => clearDownload(imageId), 2000);
                 }
               }
@@ -152,7 +141,6 @@ export const useImageDownload = (): UseImageDownloadReturn => {
         return true;
 
       } else {
-        console.error('❌ Download failed:', result.message);
         
         updateDownloadState(imageId, {
           isDownloading: false,
@@ -182,7 +170,6 @@ export const useImageDownload = (): UseImageDownloadReturn => {
       }
 
     } catch (error) {
-      console.error('❌ Download error:', error);
       
       const errorMessage = error instanceof Error ? error.message : 'Unknown download error';
       
@@ -216,7 +203,6 @@ export const useImageDownload = (): UseImageDownloadReturn => {
 
   
   const clearAllDownloads = useCallback(() => {
-    console.log('🧹 Clearing all downloads');
     setDownloads(new Map());
     cancelTokens.current.clear();
   }, []);
@@ -280,7 +266,6 @@ export const useBatchDownload = () => {
     completed: number;
     errors: string[];
   }> => {
-    console.log('📥 Starting batch download of', images.length, 'images');
 
     setBatchState({
       isActive: true,
@@ -299,10 +284,8 @@ export const useBatchDownload = () => {
       const image = images[i];
       
       try {
-        console.log(`📥 Downloading ${i + 1}/${images.length}:`, image.id);
-        
         const success = await singleDownload.downloadImage(image, false);
-        
+
         if (success) {
           results.completed++;
         } else {
@@ -310,21 +293,18 @@ export const useBatchDownload = () => {
           results.success = false;
         }
 
-        
         setBatchState(prev => ({
           ...prev,
           completed: results.completed,
           errors: results.errors,
         }));
 
-        
         if (i < images.length - 1) {
           await new Promise(resolve => setTimeout(resolve, 500));
         }
 
       } catch (error) {
         const errorMsg = `Error downloading image ${image.id}: ${error instanceof Error ? error.message : 'Unknown error'}`;
-        console.error('❌', errorMsg);
         results.errors.push(errorMsg);
         results.success = false;
       }
@@ -360,7 +340,6 @@ export const useBatchDownload = () => {
       );
     }
 
-    console.log('📊 Batch download completed:', results);
     return results;
 
   }, [singleDownload]);
@@ -381,10 +360,10 @@ export const useSimpleDownload = () => {
     if (isDownloading) return false;
 
     setIsDownloading(true);
-    
+
     try {
       const result = await ImageDownloadService.downloadImage(image);
-      
+
       if (result.success) {
         Alert.alert("Success! 📸", result.message);
         return true;
