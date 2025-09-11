@@ -8,8 +8,8 @@ export interface ImageAsset {
 export interface QuickEditScreenProps {
   quickEditImage: ImageAsset | null;
   onBackToHome: () => void;
-  onGenerate: (prompt: string, images: ImageAsset[]) => void;
-  onImageEdit: (action: string, imageUri: string, params?: any, shouldSaveToGallery?: boolean) => void;
+  onGenerate: (prompt: string, images: ImageAsset[], onProgress?: (progress: number) => void) => void;
+  onImageEdit: (action: string, imageUri: string, params?: any, shouldSaveToGallery?: boolean, onProgress?: (progress: number) => void) => void;
   onRePickImage: () => void;
   isLoading: boolean;
   userId?: string | null;
@@ -25,7 +25,7 @@ export interface CropRegion {
 export type TabType = "retouch" | "crop" | "adjust" | "filters";
 
 export interface TabProps {
-  onImageEdit: (action: string, imageUri: string, params?: any, shouldSaveToGallery?: boolean) => void;
+  onImageEdit: (action: string, imageUri: string, params?: any, shouldSaveToGallery?: boolean, onProgress?: (progress: number) => void) => void;
   quickEditImage: ImageAsset | null;
   isLoading: boolean;
 }

@@ -3,20 +3,29 @@ import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import { ADJUSTMENT_PRESETS } from "../../helper/QuickEdit/constants";
 import { TabProps } from "../../helper/QuickEdit/types";
 
-const AdjustTab: React.FC<TabProps> = ({ 
-  onImageEdit, 
-  quickEditImage, 
-  isLoading 
+const AdjustTab: React.FC<TabProps> = ({
+  onImageEdit,
+  quickEditImage,
+  isLoading,
 }) => {
   const [selectedPreset, setSelectedPreset] = useState("");
   const [customPrompt, setCustomPrompt] = useState("");
 
   const handleExecuteAdjust = () => {
     if (!quickEditImage) return;
-    
+
     const adjustment = customPrompt.trim() || selectedPreset;
     if (adjustment) {
-      onImageEdit("adjust", quickEditImage.uri, adjustment);
+      onImageEdit(
+        "adjust",
+        quickEditImage.uri,
+        adjustment,
+        false,
+        (progress: number) => {
+          // Progress callback will be handled by the parent component
+          console.log(`Adjust progress: ${progress}%`);
+        }
+      );
     }
   };
 
@@ -30,8 +39,8 @@ const AdjustTab: React.FC<TabProps> = ({
     setSelectedPreset("");
   };
 
-  const canExecute = quickEditImage && !isLoading && 
-    (selectedPreset || customPrompt.trim());
+  const canExecute =
+    quickEditImage && !isLoading && (selectedPreset || customPrompt.trim());
 
   return (
     <View className="p-4">
@@ -48,7 +57,7 @@ const AdjustTab: React.FC<TabProps> = ({
           </TouchableOpacity>
         ))}
       </View>
-      
+
       <TextInput
         placeholder="Or type a custom adjustment..."
         className="bg-zinc-800 text-white rounded-lg p-3 w-full text-base mb-2"
@@ -56,7 +65,7 @@ const AdjustTab: React.FC<TabProps> = ({
         onChangeText={handleCustomInput}
         placeholderTextColor="#a1a1aa"
       />
-      
+
       <TouchableOpacity
         onPress={handleExecuteAdjust}
         disabled={!canExecute}

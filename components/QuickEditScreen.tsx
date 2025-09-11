@@ -4,9 +4,9 @@ import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
-  Animated,
   Image,
   Platform,
+  Animated as RNAnimated,
   Text,
   TouchableOpacity,
   View,
@@ -55,7 +55,8 @@ interface ModifiedQuickEditScreenProps extends QuickEditScreenProps {
     action: string,
     imageUri: string,
     params?: any,
-    shouldSaveToGallery?: boolean
+    shouldSaveToGallery?: boolean,
+    onProgress?: (progress: number) => void
   ) => Promise<ImageAsset | null>;
   userId?: string | null;
 }
@@ -81,20 +82,21 @@ const QuickEditScreen: React.FC<ModifiedQuickEditScreenProps> = ({
   const [cropRegion, setCropRegion] = useState<CropRegion | null>(null);
   const [cropMode, setCropMode] = useState<"free" | "1:1" | "16:9">("free");
   const [isSaving, setIsSaving] = useState(false);
-  const animatedProgress = useRef(new Animated.Value(0)).current;
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentProgress, setCurrentProgress] = useState(0);
+  const animatedProgress = useRef(new RNAnimated.Value(0)).current;
 
-  // Progress animation logic
   const startProgressAnimation = () => {
     animatedProgress.setValue(0);
-    Animated.timing(animatedProgress, {
+    RNAnimated.timing(animatedProgress, {
       toValue: 90,
-      duration: 1500,
+      duration: 2500,
       useNativeDriver: false,
     }).start();
   };
 
   const completeProgressAnimation = () => {
-    Animated.timing(animatedProgress, {
+    RNAnimated.timing(animatedProgress, {
       toValue: 100,
       duration: 300,
       useNativeDriver: false,
@@ -102,6 +104,7 @@ const QuickEditScreen: React.FC<ModifiedQuickEditScreenProps> = ({
   };
 
   const resetProgressAnimation = () => {
+    setCurrentProgress(0);
     animatedProgress.setValue(0);
   };
 
@@ -116,22 +119,58 @@ const QuickEditScreen: React.FC<ModifiedQuickEditScreenProps> = ({
   }, [quickEditImage, setInitial]);
 
   const wrappedOnImageEdit = useCallback(
-    async (action: string, imageUri: string, params?: any) => {
+    (
+      action: string,
+      imageUri: string,
+      params?: any,
+      shouldSaveToGallery?: boolean,
+      onProgress?: (progress: number) => void
+    ) => {
       if (!onImageEdit) return;
 
+      setIsEditing(true);
+      resetProgressAnimation();
+
+      // Start the progress animation
+      startProgressAnimation();
+
       // For intermediate edits in QuickEdit, don't save to gallery
-      const editedImageResult = await onImageEdit(
+      console.log(
+        "🎯 QuickEditScreen calling onImageEdit with progress callback"
+      );
+      onImageEdit(
         action,
         imageUri,
         params,
-        false
-      );
-
-      if (editedImageResult && editedImageResult.uri) {
-        push(editedImageResult);
-      }
+        shouldSaveToGallery || false,
+        (progress: number) => {
+          // Update progress bar with real progress
+          console.log("📊 QuickEditScreen progress callback:", progress);
+          setCurrentProgress(progress);
+          animatedProgress.setValue(progress);
+          if (onProgress) onProgress(progress);
+        }
+      )
+        .then((editedImageResult) => {
+          if (editedImageResult && editedImageResult.uri) {
+            push(editedImageResult);
+          }
+          // Complete the progress bar animation
+          completeProgressAnimation();
+          setCurrentProgress(100);
+        })
+        .catch((error) => {
+          console.error("Edit operation failed:", error);
+          resetProgressAnimation();
+        })
+        .finally(() => {
+          setIsEditing(false);
+          setTimeout(() => {
+            resetProgressAnimation();
+          }, 600);
+        });
     },
-    [onImageEdit, push]
+    [onImageEdit, push, animatedProgress]
   );
 
   const onImageLayout = (event: any) => {
@@ -196,17 +235,25 @@ const QuickEditScreen: React.FC<ModifiedQuickEditScreenProps> = ({
       }
 
       setIsSaving(true);
+      resetProgressAnimation();
+
+      // Start the progress animation
       startProgressAnimation();
 
       let localUri = uri;
       if (/^https?:\/\//i.test(uri)) {
+        // Step 1: Download remote image (20%)
+        animatedProgress.setValue(20);
+        setCurrentProgress(20);
         const filename = `quickedit-${Date.now()}.jpg`;
         const dest = FileSystem.cacheDirectory + filename;
         const dl = await FileSystem.downloadAsync(uri, dest);
         localUri = dl.uri;
       }
 
-      // Save to gallery
+      // Step 2: Request permissions (30%)
+      animatedProgress.setValue(30);
+      setCurrentProgress(30);
       const { status } = await MediaLibrary.requestPermissionsAsync();
       if (status !== "granted") {
         resetProgressAnimation();
@@ -218,44 +265,62 @@ const QuickEditScreen: React.FC<ModifiedQuickEditScreenProps> = ({
         return;
       }
 
-      // Progress: 30% - Gallery save
-      Animated.timing(animatedProgress, {
-        toValue: 40,
-        duration: 500,
-        useNativeDriver: false,
-      }).start();
-
+      // Step 3: Save to gallery (60%)
+      animatedProgress.setValue(60);
+      setCurrentProgress(60);
       await MediaLibrary.saveToLibraryAsync(localUri);
 
-      // Progress: 50% - Prepare for cloud upload
-      Animated.timing(animatedProgress, {
-        toValue: 60,
-        duration: 300,
-        useNativeDriver: false,
-      }).start();
-
-      // Save to gallery and Supabase through the main app's handleImageEdit
+      // Step 4: Save to gallery and Supabase through the main app's handleImageEdit
       if (onImageEdit && userId) {
         try {
-          // Call onImageEdit with shouldSaveToGallery: true to add to gallery
-          await onImageEdit("save", localUri, null, true);
-          Alert.alert("Saved", "Image saved to your gallery and cloud.");
+          // Step 5: Upload to cloud (80% - 100%)
+          animatedProgress.setValue(80);
+          setCurrentProgress(80);
+          await onImageEdit(
+            "save",
+            localUri,
+            null,
+            true,
+            (progress: number) => {
+              // Map progress to remaining range (80%-100%)
+              const mappedProgress = 80 + progress * 0.2;
+              setCurrentProgress(mappedProgress);
+              animatedProgress.setValue(mappedProgress);
+            }
+          );
+          completeProgressAnimation();
+          setCurrentProgress(100);
+          setTimeout(() => {
+            Alert.alert("Saved", "Image saved to your gallery and cloud.");
+          }, 300);
         } catch (error) {
           console.error("Failed to save through handleImageEdit:", error);
           // Fallback: save directly to Supabase
+          animatedProgress.setValue(80);
+          setCurrentProgress(80);
           const dataUrl = await convertFileUriToDataUrl(localUri);
           if (dataUrl) {
+            animatedProgress.setValue(90);
+            setCurrentProgress(90);
             const saveResult = await SupabaseImageServiceRN.uploadAndSaveImage(
               dataUrl,
-              userId
+              userId,
+              (progress: number) => {
+                // Map Supabase progress (5%-100%) to remaining progress (90%-100%)
+                const mappedProgress = 90 + progress * 0.1;
+                setCurrentProgress(mappedProgress);
+                animatedProgress.setValue(mappedProgress);
+              }
             );
             if (saveResult.success) {
               completeProgressAnimation();
+              setCurrentProgress(100);
               setTimeout(() => {
                 Alert.alert("Saved", "Image saved to your gallery and cloud.");
               }, 300);
             } else {
               completeProgressAnimation();
+              setCurrentProgress(100);
               setTimeout(() => {
                 Alert.alert(
                   "Saved",
@@ -264,14 +329,22 @@ const QuickEditScreen: React.FC<ModifiedQuickEditScreenProps> = ({
               }, 300);
             }
           } else {
-            Alert.alert(
-              "Saved",
-              "Image saved to gallery, but failed to prepare for cloud."
-            );
+            completeProgressAnimation();
+            setCurrentProgress(100);
+            setTimeout(() => {
+              Alert.alert(
+                "Saved",
+                "Image saved to gallery, but failed to prepare for cloud."
+              );
+            }, 300);
           }
         }
       } else {
-        Alert.alert("Saved", "Image saved to your gallery.");
+        completeProgressAnimation();
+        setCurrentProgress(100);
+        setTimeout(() => {
+          Alert.alert("Saved", "Image saved to your gallery.");
+        }, 300);
       }
     } catch (e: any) {
       console.error(e);
@@ -342,10 +415,15 @@ const QuickEditScreen: React.FC<ModifiedQuickEditScreenProps> = ({
         />
 
         <LoadingModal
-          visible={isSaving}
-          title="Saving to Gallery"
-          message="Storing your edited image..."
+          visible={isSaving || isEditing}
+          title={isSaving ? "Saving to Gallery" : "Processing Image"}
+          message={
+            isSaving
+              ? "Storing your edited image..."
+              : "AI is processing your request..."
+          }
           animatedProgress={animatedProgress}
+          progress={currentProgress}
         />
       </SafeAreaView>
     </GestureHandlerRootView>

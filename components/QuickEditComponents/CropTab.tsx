@@ -1,12 +1,9 @@
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { CROP_MODES } from "../../helper/QuickEdit/constants";
-import { CropRegion, ImageAsset } from "../../helper/QuickEdit/types";
+import { CropRegion, ImageAsset, TabProps } from "../../helper/QuickEdit/types";
 
-interface CropTabProps {
-  onImageEdit: (action: string, uri: string, params: any) => void;
-  quickEditImage: ImageAsset | null;
-  isLoading: boolean;
+interface CropTabProps extends TabProps {
   cropRegion: CropRegion | null;
   cropMode: "free" | "1:1" | "16:9";
   setCropMode: (mode: "free" | "1:1" | "16:9") => void;
@@ -44,7 +41,16 @@ const CropTab: React.FC<CropTabProps> = ({
           height: originalImage.height ?? imageLayout.height,
         },
       };
-      onImageEdit("crop", quickEditImage.uri, cropParams);
+      onImageEdit(
+        "crop",
+        quickEditImage.uri,
+        cropParams,
+        false,
+        (progress: number) => {
+          // Progress callback will be handled by the parent component
+          console.log(`🎨 CropTab progress callback: ${progress}%`);
+        }
+      );
     }
   };
 
