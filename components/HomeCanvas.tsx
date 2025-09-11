@@ -89,6 +89,7 @@ const HomeCanvas: React.FC = () => {
   const [hasEdited, setHasEdited] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [currentProgress, setCurrentProgress] = useState(0);
 
   const animatedProgress = new RNAnimated.Value(0);
 
@@ -123,6 +124,7 @@ const HomeCanvas: React.FC = () => {
   };
 
   const resetProgressAnimation = () => {
+    setCurrentProgress(0);
     animatedProgress.setValue(0);
   };
 
@@ -175,14 +177,22 @@ const HomeCanvas: React.FC = () => {
     const yPercent = (relativeY / layout.height) * 100;
 
     setIsLoading(true);
-    startProgressAnimation();
+    resetProgressAnimation();
+
     try {
       const { finalImageUrl } = await generateCompositeImage(
         objectImage,
         sceneImage,
-        { xPercent, yPercent }
+        { xPercent, yPercent },
+        (progress: number) => {
+          // Update progress bar with real progress
+          setCurrentProgress(progress);
+          animatedProgress.setValue(progress);
+        }
       );
-      completeProgressAnimation();
+
+      // Complete the progress bar
+      animatedProgress.setValue(100);
       setTimeout(() => {
         setSceneImage((prev) =>
           prev ? { ...prev, uri: finalImageUrl } : null
@@ -217,8 +227,11 @@ const HomeCanvas: React.FC = () => {
     }
 
     setIsSaving(true);
-    startProgressAnimation();
+    resetProgressAnimation();
+
     try {
+      // Step 1: Request permissions (10%)
+      animatedProgress.setValue(10);
       const { status } = await MediaLibrary.requestPermissionsAsync();
       if (status !== "granted") {
         resetProgressAnimation();
@@ -228,19 +241,32 @@ const HomeCanvas: React.FC = () => {
         );
         return;
       }
+
+      // Step 2: Save to gallery (30%)
+      animatedProgress.setValue(30);
       await MediaLibrary.saveToLibraryAsync(sceneImage.uri);
 
+      // Step 3: Convert to base64 (50%)
+      animatedProgress.setValue(50);
       const base64 = await FileSystem.readAsStringAsync(sceneImage.uri, {
         encoding: FileSystem.EncodingType.Base64,
       });
       const dataURL = `data:image/jpeg;base64,${base64}`;
 
+      // Step 4: Upload to Supabase (80% - 100%)
+      animatedProgress.setValue(80);
       const result = await SupabaseImageServiceRN.uploadAndSaveImage(
         dataURL,
-        userId
+        userId,
+        (progress: number) => {
+          // Map Supabase progress (5%-100%) to remaining progress (80%-100%)
+          const mappedProgress = 80 + progress * 0.2;
+          setCurrentProgress(mappedProgress);
+          animatedProgress.setValue(mappedProgress);
+        }
       );
       if (result.success) {
-        completeProgressAnimation();
+        animatedProgress.setValue(100);
         setTimeout(async () => {
           await loadGalleryImages();
           Alert.alert(
@@ -363,6 +389,7 @@ const HomeCanvas: React.FC = () => {
             : "AI is processing your request..."
         }
         animatedProgress={animatedProgress}
+        progress={currentProgress}
       />
 
       {/* --- PERBAIKAN: Ghost image sekarang menjadi sibling dari SafeAreaView --- */}

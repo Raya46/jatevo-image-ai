@@ -75,7 +75,8 @@ const cropToOriginalAspectRatio = async (
 export const generateCompositeImage = async (
   objectImage: ImageAsset,
   environmentImage: ImageAsset,
-  dropPosition: { xPercent: number; yPercent: number }
+  dropPosition: { xPercent: number; yPercent: number },
+  onProgress?: (progress: number) => void
 ): Promise<{ finalImageUrl: string; finalPrompt: string }> => {
   console.log(
     "Starting multi-step image generation process in React Native..."
@@ -84,20 +85,25 @@ export const generateCompositeImage = async (
 
   // STEP 1: Ubah ukuran kedua gambar
   console.log("Resizing product and scene images...");
+  onProgress?.(10); // Progress: 10% - Starting resize
   const resizedObjectImage = await resizeImageWithPadding(
     objectImage,
     MAX_DIMENSION
   );
+  onProgress?.(25); // Progress: 25% - Object image resized
   const resizedEnvironmentImage = await resizeImageWithPadding(
     environmentImage,
     MAX_DIMENSION
   );
+  onProgress?.(35); // Progress: 35% - Both images resized
 
   // STEP 2: Dapatkan deskripsi lokasi semantik dari model AI pertama
   console.log(
     "Generating semantic location description with gemini-2.5-flash..."
   );
+  onProgress?.(40); // Progress: 40% - Starting semantic description
   const resizedEnvBase64 = await uriToBase64(resizedEnvironmentImage.uri);
+  onProgress?.(45); // Progress: 45% - Base64 conversion complete
 
   // --- PERBAIKAN: Prompt yang jauh lebih detail untuk deskripsi lokasi ---
   const descriptionPrompt = `
@@ -123,6 +129,7 @@ Provide only the two descriptions concatenated in a few sentences.
 
   let semanticLocationDescription = "";
   try {
+    onProgress?.(50); // Progress: 50% - Sending semantic description request
     const descApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
     const descResponse = await fetch(descApiUrl, {
       method: "POST",
@@ -148,6 +155,7 @@ Provide only the two descriptions concatenated in a few sentences.
     const descData = await descResponse.json();
     semanticLocationDescription = descData.candidates[0].content.parts[0].text;
     console.log("Generated description:", semanticLocationDescription);
+    onProgress?.(60); // Progress: 60% - Semantic description generated
   } catch (error) {
     console.error("Failed to generate semantic description:", error);
     semanticLocationDescription = `at the specified location.`; // Fallback
@@ -155,7 +163,9 @@ Provide only the two descriptions concatenated in a few sentences.
 
   // STEP 3: Hasilkan gambar komposit dengan prompt yang sudah diperkaya
   console.log("Preparing to generate composite image...");
+  onProgress?.(65); // Progress: 65% - Preparing final generation
   const objectBase64 = await uriToBase64(resizedObjectImage.uri);
+  onProgress?.(70); // Progress: 70% - Object base64 ready
 
   // --- PERBAIKAN: Prompt akhir yang jauh lebih detail ---
   const finalPrompt = `
@@ -187,6 +197,7 @@ The output should ONLY be the final, composed image. Do not add any text or expl
 
   const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${API_KEY}`;
 
+  onProgress?.(75); // Progress: 75% - Sending final generation request
   const apiResponse = await fetch(API_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -201,6 +212,7 @@ The output should ONLY be the final, composed image. Do not add any text or expl
 
   const responseData = await apiResponse.json();
   console.log("Received response from API.");
+  onProgress?.(85); // Progress: 85% - Response received
 
   const imagePart = responseData.candidates?.[0]?.content?.parts?.find(
     (p: any) => p.inlineData
@@ -214,6 +226,7 @@ The output should ONLY be the final, composed image. Do not add any text or expl
     });
 
     console.log("Cropping generated image to original aspect ratio...");
+    onProgress?.(90); // Progress: 90% - Processing final image
     const finalImageUri = await cropToOriginalAspectRatio(
       tempUri,
       environmentImage.width,
@@ -221,6 +234,7 @@ The output should ONLY be the final, composed image. Do not add any text or expl
       MAX_DIMENSION
     );
 
+    onProgress?.(95); // Progress: 95% - Final processing complete
     return { finalImageUrl: finalImageUri, finalPrompt: finalPrompt };
   }
 

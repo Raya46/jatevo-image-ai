@@ -3,20 +3,29 @@ import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import { FILTER_PRESETS } from "../../helper/QuickEdit/constants";
 import { TabProps } from "../../helper/QuickEdit/types";
 
-const FiltersTab: React.FC<TabProps> = ({ 
-  onImageEdit, 
-  quickEditImage, 
-  isLoading 
+const FiltersTab: React.FC<TabProps> = ({
+  onImageEdit,
+  quickEditImage,
+  isLoading,
 }) => {
   const [selectedFilter, setSelectedFilter] = useState("");
   const [customPrompt, setCustomPrompt] = useState("");
 
   const handleExecuteFilter = () => {
     if (!quickEditImage) return;
-    
+
     const filter = customPrompt.trim() || selectedFilter;
     if (filter) {
-      onImageEdit("filter", quickEditImage.uri, filter);
+      onImageEdit(
+        "filter",
+        quickEditImage.uri,
+        filter,
+        false,
+        (progress: number) => {
+          // Progress callback will be handled by the parent component
+          console.log(`🎨 FiltersTab progress callback: ${progress}%`);
+        }
+      );
     }
   };
 
@@ -30,8 +39,8 @@ const FiltersTab: React.FC<TabProps> = ({
     setSelectedFilter("");
   };
 
-  const canExecute = quickEditImage && !isLoading && 
-    (selectedFilter || customPrompt.trim());
+  const canExecute =
+    quickEditImage && !isLoading && (selectedFilter || customPrompt.trim());
 
   return (
     <View className="p-4">
@@ -48,7 +57,7 @@ const FiltersTab: React.FC<TabProps> = ({
           </TouchableOpacity>
         ))}
       </View>
-      
+
       <TextInput
         placeholder="Or create a custom filter..."
         className="bg-zinc-800 text-white rounded-lg p-3 w-full text-base mb-2"
@@ -56,7 +65,7 @@ const FiltersTab: React.FC<TabProps> = ({
         onChangeText={handleCustomInput}
         placeholderTextColor="#a1a1aa"
       />
-      
+
       <TouchableOpacity
         onPress={handleExecuteFilter}
         disabled={!canExecute}

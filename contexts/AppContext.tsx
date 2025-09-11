@@ -42,7 +42,8 @@ interface AppContextType {
   // Image generation
   generateWithPrompt: (
     prompt: string,
-    images: ImageAsset[]
+    images: ImageAsset[],
+    onProgress?: (progress: number) => void
   ) => Promise<ImageAsset | null>;
   isGenerating: boolean;
 
@@ -51,7 +52,8 @@ interface AppContextType {
     action: string,
     imageUri: string,
     params?: any,
-    shouldSaveToGallery?: boolean
+    shouldSaveToGallery?: boolean,
+    onProgress?: (progress: number) => void
   ) => Promise<ImageAsset | null>;
   isEditing: boolean;
 }
@@ -146,12 +148,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   // Generate image with prompt
   const generateWithPrompt = async (
     prompt: string,
-    images: ImageAsset[] = []
+    images: ImageAsset[] = [],
+    onProgress?: (progress: number) => void
   ): Promise<ImageAsset | null> => {
     if (!userId) return null;
 
     try {
-      const newImage = await generateImage(prompt, images);
+      console.log(
+        "🎯 AppContext generateWithPrompt calling generateImage with progress callback"
+      );
+      const newImage = await generateImage(prompt, images, onProgress);
       if (newImage) {
         // Convert GalleryImage to ImageAsset
         return {
@@ -173,7 +179,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     action: string,
     imageUri: string,
     params?: any,
-    shouldSaveToGallery: boolean = true
+    shouldSaveToGallery: boolean = true,
+    onProgress?: (progress: number) => void
   ): Promise<ImageAsset | null> => {
     if (!userId) return null;
 
@@ -188,22 +195,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           };
           break;
         case "removeBackground":
-          editedImage = await removeBackground(imageUri);
+          editedImage = await removeBackground(imageUri, onProgress);
           break;
         case "enhance":
-          editedImage = await enhanceImage(imageUri);
+          editedImage = await enhanceImage(imageUri, onProgress);
           break;
         case "adjust":
           editedImage = await adjustColors(
             imageUri,
-            params || "improve colors"
+            params || "improve colors",
+            onProgress
           );
           break;
         case "crop":
-          editedImage = await cropImage(imageUri, params);
+          editedImage = await cropImage(imageUri, params, onProgress);
           break;
         case "filter":
-          editedImage = await applyFilter(imageUri, params || "enhance");
+          editedImage = await applyFilter(
+            imageUri,
+            params || "enhance",
+            onProgress
+          );
           break;
         default:
           console.log("Unknown edit action:", action);
@@ -216,7 +228,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
         const saveResult = await SupabaseImageServiceRN.uploadAndSaveImage(
           dataUrl,
-          userId
+          userId,
+          onProgress
         );
 
         if (saveResult.success && saveResult.record) {

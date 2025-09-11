@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "jatevo-image-gen",
+    "name": "Jatevo Image Gen",
     "slug": "jatevo-image-gen",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -29,7 +29,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/jatevo.png",
+          "image": "./assets/images/white.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"

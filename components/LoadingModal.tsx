@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Animated, Text, View } from "react-native";
 
 interface LoadingModalProps {
@@ -7,6 +7,7 @@ interface LoadingModalProps {
   title?: string;
   message?: string;
   animatedProgress?: Animated.Value;
+  progress?: number; // Direct progress value for smoother updates
 }
 
 const LoadingModal: React.FC<LoadingModalProps> = ({
@@ -14,7 +15,34 @@ const LoadingModal: React.FC<LoadingModalProps> = ({
   title = "Creating Magic",
   message = "AI is processing your request...",
   animatedProgress,
+  progress: directProgress,
 }) => {
+  const [currentProgress, setCurrentProgress] = useState(0);
+
+  // Listen to animated progress changes
+  useEffect(() => {
+    if (animatedProgress) {
+      const listener = animatedProgress.addListener(({ value }) => {
+        setCurrentProgress(Math.round(value));
+      });
+      return () => {
+        animatedProgress.removeListener(listener);
+      };
+    }
+  }, [animatedProgress]);
+
+  // Use direct progress if provided, otherwise use animated progress
+  const progress =
+    directProgress !== undefined ? directProgress : currentProgress;
+
+  // Debug logging
+  console.log("🎯 LoadingModal progress values:", {
+    directProgress,
+    currentProgress,
+    finalProgress: progress,
+    visible,
+  });
+
   if (!visible) return null;
 
   return (
@@ -43,20 +71,13 @@ const LoadingModal: React.FC<LoadingModalProps> = ({
             marginBottom: 16,
           }}
         >
-          <Animated.View
-            style={[
-              { height: 8, borderRadius: 9999, backgroundColor: "#a855f7" },
-              animatedProgress
-                ? {
-                    width: animatedProgress.interpolate({
-                      inputRange: [0, 100],
-                      outputRange: ["0%", "100%"],
-                    }),
-                  }
-                : {
-                    width: "50%", // Static progress for now
-                  },
-            ]}
+          <View
+            style={{
+              height: 8,
+              borderRadius: 9999,
+              backgroundColor: "#a855f7",
+              width: `${Math.max(0, Math.min(100, progress))}%`,
+            }}
           />
         </View>
         <Text className="text-zinc-500 text-sm text-center italic">

@@ -5,8 +5,8 @@ import * as MediaLibrary from "expo-media-library";
 import React, { useRef, useState } from "react";
 import {
   Alert,
-  Animated,
   Image,
+  Animated as RNAnimated,
   ScrollView,
   Text,
   TextInput,
@@ -21,7 +21,8 @@ import LoadingModal from "./LoadingModal";
 interface PromptEngineProps {
   onGenerate: (
     prompt: string,
-    images: ImageAsset[]
+    images: ImageAsset[],
+    onProgress?: (progress: number) => void
   ) => Promise<ImageAsset | null>;
   onReset?: () => void;
 }
@@ -36,20 +37,20 @@ const PromptEngine: React.FC<PromptEngineProps> = ({ onGenerate, onReset }) => {
   const [previewImage, setPreviewImage] = useState<ImageAsset | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const animatedProgress = useRef(new Animated.Value(0)).current;
+  const [currentProgress, setCurrentProgress] = useState(0);
+  const animatedProgress = useRef(new RNAnimated.Value(0)).current;
 
-  // Progress animation logic
   const startProgressAnimation = () => {
     animatedProgress.setValue(0);
-    Animated.timing(animatedProgress, {
+    RNAnimated.timing(animatedProgress, {
       toValue: 90,
-      duration: 2000,
+      duration: 2500,
       useNativeDriver: false,
     }).start();
   };
 
   const completeProgressAnimation = () => {
-    Animated.timing(animatedProgress, {
+    RNAnimated.timing(animatedProgress, {
       toValue: 100,
       duration: 300,
       useNativeDriver: false,
@@ -57,6 +58,7 @@ const PromptEngine: React.FC<PromptEngineProps> = ({ onGenerate, onReset }) => {
   };
 
   const resetProgressAnimation = () => {
+    setCurrentProgress(0);
     animatedProgress.setValue(0);
   };
 
@@ -115,19 +117,37 @@ const PromptEngine: React.FC<PromptEngineProps> = ({ onGenerate, onReset }) => {
     }
 
     setIsGenerating(true);
+    resetProgressAnimation();
+
+    // Start the progress animation
     startProgressAnimation();
+
     const imagesToUse = engineMode === "image-to-image" ? refImages : [];
     try {
-      const generatedImage = await onGenerate(prompt.trim(), imagesToUse);
+      console.log("🎯 PromptEngine calling onGenerate with progress callback");
+      const generatedImage = await onGenerate(
+        prompt.trim(),
+        imagesToUse,
+        (progress: number) => {
+          // Update progress bar with real progress from generation
+          console.log("🎯 PromptEngine progress callback received:", progress);
+          setCurrentProgress(progress);
+          // Update the animated progress to match real progress
+          animatedProgress.setValue(progress);
+        }
+      );
+
+      // Complete the progress bar animation
       completeProgressAnimation();
+      setCurrentProgress(100);
       setTimeout(() => {
         if (generatedImage) {
           setPreviewImage(generatedImage);
         }
       }, 300);
     } catch (error) {
-      resetProgressAnimation();
       console.error("Generation error:", error);
+      resetProgressAnimation();
     } finally {
       setTimeout(() => {
         setIsGenerating(false);
@@ -147,8 +167,15 @@ const PromptEngine: React.FC<PromptEngineProps> = ({ onGenerate, onReset }) => {
     if (!previewImage || !userId) return;
 
     setIsSaving(true);
+    resetProgressAnimation();
+
+    // Start the progress animation
     startProgressAnimation();
+
     try {
+      // Step 1: Request permissions (10%)
+      animatedProgress.setValue(10);
+      setCurrentProgress(10);
       const { status } = await MediaLibrary.requestPermissionsAsync();
       if (status !== "granted") {
         resetProgressAnimation();
@@ -157,40 +184,35 @@ const PromptEngine: React.FC<PromptEngineProps> = ({ onGenerate, onReset }) => {
         return;
       }
 
-      // Progress: 30% - Gallery save
-      Animated.timing(animatedProgress, {
-        toValue: 40,
-        duration: 500,
-        useNativeDriver: false,
-      }).start();
-
+      // Step 2: Save to gallery (40%)
+      animatedProgress.setValue(40);
+      setCurrentProgress(40);
       await MediaLibrary.saveToLibraryAsync(previewImage.uri);
 
-      // Progress: 60% - Base64 conversion
-      Animated.timing(animatedProgress, {
-        toValue: 70,
-        duration: 300,
-        useNativeDriver: false,
-      }).start();
-
+      // Step 3: Convert to base64 (70%)
+      animatedProgress.setValue(70);
+      setCurrentProgress(70);
       const base64 = await FileSystem.readAsStringAsync(previewImage.uri, {
         encoding: FileSystem.EncodingType.Base64,
       });
       const dataURL = `data:image/jpeg;base64,${base64}`;
 
-      // Progress: 90% - Cloud upload
-      Animated.timing(animatedProgress, {
-        toValue: 90,
-        duration: 500,
-        useNativeDriver: false,
-      }).start();
-
+      // Step 4: Upload to Supabase (90% - 100%)
+      animatedProgress.setValue(90);
+      setCurrentProgress(90);
       const result = await SupabaseImageServiceRN.uploadAndSaveImage(
         dataURL,
-        userId
+        userId,
+        (progress: number) => {
+          // Map Supabase progress (5%-100%) to remaining progress (90%-100%)
+          const mappedProgress = 90 + progress * 0.1;
+          setCurrentProgress(mappedProgress);
+          animatedProgress.setValue(mappedProgress);
+        }
       );
       if (result.success) {
         completeProgressAnimation();
+        setCurrentProgress(100);
         setTimeout(async () => {
           await loadGalleryImages();
           Alert.alert("Saved", "Image saved to gallery and Supabase");
@@ -364,12 +386,14 @@ const PromptEngine: React.FC<PromptEngineProps> = ({ onGenerate, onReset }) => {
         title="Saving to Gallery"
         message="Storing your generated image..."
         animatedProgress={animatedProgress}
+        progress={currentProgress}
       />
       <LoadingModal
         visible={isGenerating}
         title="Creating Magic"
         message="AI is processing your request..."
         animatedProgress={animatedProgress}
+        progress={currentProgress}
       />
     </View>
   );

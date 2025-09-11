@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Keyboard,
   Platform,
@@ -21,8 +27,10 @@ const RetouchTab: React.FC<RetouchTabProps> = ({
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
-    const showEvt = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvt = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const showEvt =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvt =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
 
     const subShow = Keyboard.addListener(showEvt, (e) => {
       const h = e?.endCoordinates?.height ?? 0;
@@ -48,14 +56,26 @@ const RetouchTab: React.FC<RetouchTabProps> = ({
     inputRef.current?.blur();
     Keyboard.dismiss();
 
-    onImageEdit("adjust", quickEditImage.uri, prompt.trim());
+    onImageEdit(
+      "adjust",
+      quickEditImage.uri,
+      prompt.trim(),
+      false,
+      (progress: number) => {
+        // Progress callback will be handled by the parent component
+        console.log(`🎨 RetouchTab progress callback: ${progress}%`);
+      }
+    );
   }, [canExecute, quickEditImage, onImageEdit, prompt]);
 
   // Use bottom inset to avoid double-padding on devices with a home indicator
   const bottomSpacer = Math.max(0, kbHeight - insets.bottom);
 
   return (
-    <View style={{ paddingBottom: insets.bottom, marginBottom: bottomSpacer }} className="p-4">
+    <View
+      style={{ paddingBottom: insets.bottom, marginBottom: bottomSpacer }}
+      className="p-4"
+    >
       <View className="flex-row gap-4 items-center">
         <TextInput
           ref={inputRef}

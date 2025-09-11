@@ -109,7 +109,11 @@ export class SupabaseImageServiceRN {
   /**
    * Complete workflow: Upload image and save record
    */
-  static async uploadAndSaveImage(dataURL: string, userId:string): Promise<{
+  static async uploadAndSaveImage(
+    dataURL: string,
+    userId: string,
+    onProgress?: (progress: number) => void
+  ): Promise<{
     success: boolean;
     url?: string;
     record?: ImageRecord;
@@ -118,8 +122,11 @@ export class SupabaseImageServiceRN {
   }> {
     try {
       console.log('🚀 Starting complete image save workflow...');
+      onProgress?.(5); // Progress: 5% - Starting workflow
 
-      
+      // Step 1: Upload image to storage (10% - 70%)
+      console.log('📤 Uploading image to storage...');
+      onProgress?.(10); // Progress: 10% - Starting upload
       const uploadedUrl = await this.uploadImage(dataURL);
       if (!uploadedUrl) {
         return {
@@ -127,12 +134,15 @@ export class SupabaseImageServiceRN {
           error: 'Failed to upload image (all methods failed)'
         };
       }
+      onProgress?.(70); // Progress: 70% - Upload completed
 
       const method = uploadedUrl.startsWith('data:') ? 'fallback-dataurl' : 'storage-upload';
       console.log('📊 Upload method used:', method);
 
-      
-      const record = await this.saveImageRecord(uploadedUrl,userId);
+      // Step 2: Save record to database (75% - 95%)
+      console.log('💾 Saving image record to database...');
+      onProgress?.(75); // Progress: 75% - Starting database save
+      const record = await this.saveImageRecord(uploadedUrl, userId);
       if (!record) {
         return {
           success: false,
@@ -141,9 +151,11 @@ export class SupabaseImageServiceRN {
           method
         };
       }
+      onProgress?.(95); // Progress: 95% - Database save completed
 
       console.log('🎉 Complete workflow successful!');
-      
+      onProgress?.(100); // Progress: 100% - Workflow completed
+
       return {
         success: true,
         url: uploadedUrl,
