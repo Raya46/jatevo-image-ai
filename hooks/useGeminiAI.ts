@@ -80,14 +80,14 @@ export const useGeminiAI = (): UseGeminiAIReturn => {
         throw new Error('Gemini AI client not initialized. Check your API key.');
       }
 
-      console.log('📊 Progress callback called: 5%');
-      onProgress?.(5); // Progress: 5% - Starting generation
+      console.log('📊 Progress callback called: 2%');
+      onProgress?.(2); // Progress: 2% - Starting generation
       const parts: any[] = [];
 
       if (referenceImages.length > 0) {
         console.log('🔄 Processing reference images...');
-        console.log('📊 Progress callback called: 15%');
-        onProgress?.(15); // Progress: 15% - Starting reference image processing
+        console.log('📊 Progress callback called: 5%');
+        onProgress?.(5); // Progress: 5% - Starting reference image processing
 
         for (let i = 0; i < referenceImages.length; i++) {
           const image = referenceImages[i];
@@ -97,7 +97,11 @@ export const useGeminiAI = (): UseGeminiAIReturn => {
 
             if (!base64Data && image.uri) {
               console.log(`🔄 Converting reference image ${i + 1} to base64...`);
+              console.log(`📊 Progress callback called: ${8 + (i * 5)}%`);
+              onProgress?.(8 + (i * 5)); // Progress: 8%, 13%, 18%, etc.
               base64Data = await uriToBase64(image.uri);
+              console.log(`📊 Progress callback called: ${12 + (i * 5)}%`);
+              onProgress?.(12 + (i * 5)); // Progress: 12%, 17%, 22%, etc.
             }
 
             if (base64Data) {
@@ -108,8 +112,8 @@ export const useGeminiAI = (): UseGeminiAIReturn => {
                 }
               });
               console.log(`✅ Reference image ${i + 1} added successfully`);
-              console.log(`📊 Progress callback called: ${15 + (i + 1) * 10}%`);
-              onProgress?.(15 + (i + 1) * 10); // Progress: 25%, 35%, etc. for each image
+              console.log(`📊 Progress callback called: ${15 + (i + 1) * 8}%`);
+              onProgress?.(15 + (i + 1) * 8); // Progress: 23%, 31%, 39%, etc. for each image
             } else {
               console.warn(`⚠️ Skipping reference image ${i + 1}: no base64 data`);
             }
@@ -119,11 +123,18 @@ export const useGeminiAI = (): UseGeminiAIReturn => {
         }
       }
 
+      console.log('📊 Progress callback called: 25%');
+      onProgress?.(25); // Progress: 25% - Reference images processed
+
       parts.push({ text: prompt });
 
       console.log('🔄 Sending request to Gemini API via fetch...');
-      console.log('📊 Progress callback called: 50%');
-      onProgress?.(50); // Progress: 50% - Sending API request
+      console.log('📊 Progress callback called: 30%');
+      onProgress?.(30); // Progress: 30% - Preparing API request
+      console.log('📊 Progress callback called: 35%');
+      onProgress?.(35); // Progress: 35% - API request prepared
+      console.log('📊 Progress callback called: 40%');
+      onProgress?.(40); // Progress: 40% - Sending API request
       const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${GEMINI_API_KEY}`;
 
       const apiResponse = await fetch(API_URL, {
@@ -142,10 +153,14 @@ export const useGeminiAI = (): UseGeminiAIReturn => {
         throw new Error(`API request failed with status ${apiResponse.status}: ${errorBody}`);
       }
 
+      console.log('📊 Progress callback called: 60%');
+      onProgress?.(60); // Progress: 60% - API request sent, waiting for response
       const response = await apiResponse.json();
       console.log('✅ Received response from Gemini API');
-      console.log('📊 Progress callback called: 80%');
-      onProgress?.(80); // Progress: 80% - Response received
+      console.log('📊 Progress callback called: 70%');
+      onProgress?.(70); // Progress: 70% - Response received, processing
+      console.log('📊 Progress callback called: 75%');
+      onProgress?.(75); // Progress: 75% - Response processed
 
       let imageData = null;
       let textResponse = '';
@@ -166,21 +181,29 @@ export const useGeminiAI = (): UseGeminiAIReturn => {
       }
 
       if (imageData?.data) {
-        console.log('📊 Progress callback called: 85%');
-        onProgress?.(85); // Progress: 85% - Processing image data
+        console.log('📊 Progress callback called: 80%');
+        onProgress?.(80); // Progress: 80% - Image data extracted
+        console.log('📊 Progress callback called: 82%');
+        onProgress?.(82); // Progress: 82% - Preparing file save
         const tempFilePath = FileSystem.cacheDirectory + `generated_image_${Date.now()}.jpeg`;
 
+        console.log('📊 Progress callback called: 85%');
+        onProgress?.(85); // Progress: 85% - Saving image file
         await FileSystem.writeAsStringAsync(tempFilePath, imageData.data, {
           encoding: FileSystem.EncodingType.Base64,
         });
 
         console.log('✅ Image generated and saved to temporary file:', tempFilePath);
+        console.log('📊 Progress callback called: 88%');
+        onProgress?.(88); // Progress: 88% - File saved successfully
 
         const fileInfo = await FileSystem.getInfoAsync(tempFilePath);
         if (fileInfo.exists) {
             console.log('📊 Generated image size:', Math.round(fileInfo.size / 1024), 'KB');
         }
 
+        console.log('📊 Progress callback called: 92%');
+        onProgress?.(92); // Progress: 92% - File info retrieved
         console.log('📊 Progress callback called: 95%');
         onProgress?.(95); // Progress: 95% - Image processing complete
         return {
@@ -235,12 +258,17 @@ export const useGeminiAI = (): UseGeminiAIReturn => {
       }
 
       console.log('🎨 Starting image editing with progress callback...');
-      onProgress?.(10); // Progress: 10% - Starting edit
+      console.log('📊 Progress callback called: 5%');
+      onProgress?.(5); // Progress: 5% - Starting edit
+      console.log('📊 Progress callback called: 8%');
+      onProgress?.(8); // Progress: 8% - Preparing image conversion
       console.log('🔄 Converting image to base64...');
       const base64Data = await uriToBase64(imageUri);
       console.log('✅ Image converted to base64 successfully');
-      onProgress?.(30); // Progress: 30% - Image converted
+      console.log('📊 Progress callback called: 25%');
+      onProgress?.(25); // Progress: 25% - Image converted
       console.log('📊 Progress callback called: 30%');
+      onProgress?.(30); // Progress: 30% - Preparing API request
 
       const parts = [
         { inlineData: { mimeType: 'image/jpeg', data: base64Data }},
@@ -248,8 +276,10 @@ export const useGeminiAI = (): UseGeminiAIReturn => {
       ];
 
       console.log('🔄 Sending edit request to Gemini API via fetch...');
-      onProgress?.(40); // Progress: 40% - Sending edit request
+      console.log('📊 Progress callback called: 35%');
+      onProgress?.(35); // Progress: 35% - Preparing API request
       console.log('📊 Progress callback called: 40%');
+      onProgress?.(40); // Progress: 40% - Sending edit request
       const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${GEMINI_API_KEY}`;
 
       const apiResponse = await fetch(API_URL, {
@@ -268,9 +298,14 @@ export const useGeminiAI = (): UseGeminiAIReturn => {
         throw new Error(`API request failed with status ${apiResponse.status}: ${errorBody}`);
       }
 
+      console.log('📊 Progress callback called: 55%');
+      onProgress?.(55); // Progress: 55% - API request sent, waiting for response
       const response = await apiResponse.json();
       console.log('✅ Received edit response from Gemini API');
-      onProgress?.(70); // Progress: 70% - Response received
+      console.log('📊 Progress callback called: 65%');
+      onProgress?.(65); // Progress: 65% - Response received, processing
+      console.log('📊 Progress callback called: 70%');
+      onProgress?.(70); // Progress: 70% - Response processed
 
       let imageData = null;
       let textResponse = '';
@@ -291,20 +326,30 @@ export const useGeminiAI = (): UseGeminiAIReturn => {
       }
 
       if (imageData?.data) {
-        onProgress?.(80); // Progress: 80% - Processing edited image
+        console.log('📊 Progress callback called: 75%');
+        onProgress?.(75); // Progress: 75% - Image data extracted
+        console.log('📊 Progress callback called: 78%');
+        onProgress?.(78); // Progress: 78% - Preparing file save
         const tempFilePath = FileSystem.cacheDirectory + `edited_image_${Date.now()}.jpeg`;
 
+        console.log('📊 Progress callback called: 80%');
+        onProgress?.(80); // Progress: 80% - Saving edited image file
         await FileSystem.writeAsStringAsync(tempFilePath, imageData.data, {
           encoding: FileSystem.EncodingType.Base64,
         });
 
         console.log('✅ Image edited and saved to temporary file:', tempFilePath);
+        console.log('📊 Progress callback called: 85%');
+        onProgress?.(85); // Progress: 85% - File saved successfully
 
         const fileInfo = await FileSystem.getInfoAsync(tempFilePath);
         if (fileInfo.exists) {
             console.log('📊 Edited image size:', Math.round(fileInfo.size / 1024), 'KB');
         }
 
+        console.log('📊 Progress callback called: 90%');
+        onProgress?.(90); // Progress: 90% - File info retrieved
+        console.log('📊 Progress callback called: 95%');
         onProgress?.(95); // Progress: 95% - Edit processing complete
         return {
           id: Date.now(),
