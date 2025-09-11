@@ -1,4 +1,3 @@
-import { debugImageUri } from '@/utils/ImageUriUtils';
 import { useCallback, useState } from 'react';
 import { useGeminiAI } from './useGeminiAI';
 
@@ -37,8 +36,7 @@ export const useImageEditing = (): UseImageEditingReturn => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const clearError = useCallback(() => {
-    
-    console.log('🧹 Clearing error state');
+    // Clear error state
   }, []);
 
   
@@ -49,10 +47,6 @@ export const useImageEditing = (): UseImageEditingReturn => {
     onProgress?: (progress: number) => void
   ): Promise<GalleryImage | null> => {
     try {
-      console.log(`Starting ${operation}...`);
-      console.log('Image URI:', imageUri.substring(0, 100) + '...');
-      console.log('Edit prompt:', editPrompt);
-
       if (!imageUri) {
         throw new Error('No image provided for editing');
       }
@@ -61,23 +55,13 @@ export const useImageEditing = (): UseImageEditingReturn => {
         throw new Error('No editing instructions provided');
       }
 
-      
-      await debugImageUri(imageUri);
-
-      console.log('🎨 useImageEditing calling editImage with progress callback');
       const result = await editImage(imageUri, editPrompt, onProgress);
-      
-      if (result) {
-        console.log(`${operation} completed successfully`);
-      } else {
-        console.log(`${operation} failed - no result returned`);
-      }
 
       return result;
 
     } catch (err) {
       console.error(`${operation} failed:`, err);
-      throw err; 
+      throw err;
     }
   }, [editImage]);
 
@@ -226,7 +210,6 @@ export const useImageEditing = (): UseImageEditingReturn => {
           prompt = `Apply a ${filterType} artistic filter to this image. Transform the image according to the characteristics and aesthetic of ${filterType} style.`;
       }
 
-      console.log('🎨 Applying filter:', filterType);
       return await safeEdit(imageUri, prompt, `Filter: ${filterType}`, onProgress);
     } catch (err) {
       console.error('❌ Apply filter failed:', err);

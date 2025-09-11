@@ -27,7 +27,7 @@ export class SupabaseImageServiceRN {
     try {
       const [header, base64] = dataURL.split(',');
       const mimeType = header.match(/:(.*?);/)?.[1] || 'image/png';
-      
+
       return { base64, mimeType };
     } catch (error) {
       console.error('❌ Error parsing data URL:', error);
@@ -82,10 +82,6 @@ export class SupabaseImageServiceRN {
    */
   static async saveImageRecord(url: string, userId:string): Promise<ImageRecord | null> {
     try {
-      console.log('💾 Saving image record to database...');
-      console.log('🔗 URL length:', url.length);
-      console.log('🔗 URL type:', url.startsWith('data:') ? 'Data URL' : 'Public URL');
-      
       const { data, error } = await supabase
         .from(this.TABLE_NAME)
         .insert([{ url, user_id:userId }])
@@ -97,7 +93,6 @@ export class SupabaseImageServiceRN {
         throw error;
       }
 
-      console.log('✅ Image record saved:', data);
       return data;
 
     } catch (error) {
@@ -121,11 +116,9 @@ export class SupabaseImageServiceRN {
     method?: string;
   }> {
     try {
-      console.log('🚀 Starting complete image save workflow...');
       onProgress?.(5); // Progress: 5% - Starting workflow
 
       // Step 1: Upload image to storage (10% - 70%)
-      console.log('📤 Uploading image to storage...');
       onProgress?.(10); // Progress: 10% - Starting upload
       const uploadedUrl = await this.uploadImage(dataURL);
       if (!uploadedUrl) {
@@ -137,10 +130,8 @@ export class SupabaseImageServiceRN {
       onProgress?.(70); // Progress: 70% - Upload completed
 
       const method = uploadedUrl.startsWith('data:') ? 'fallback-dataurl' : 'storage-upload';
-      console.log('📊 Upload method used:', method);
 
       // Step 2: Save record to database (75% - 95%)
-      console.log('💾 Saving image record to database...');
       onProgress?.(75); // Progress: 75% - Starting database save
       const record = await this.saveImageRecord(uploadedUrl, userId);
       if (!record) {
@@ -153,7 +144,6 @@ export class SupabaseImageServiceRN {
       }
       onProgress?.(95); // Progress: 95% - Database save completed
 
-      console.log('🎉 Complete workflow successful!');
       onProgress?.(100); // Progress: 100% - Workflow completed
 
       return {
@@ -173,38 +163,33 @@ export class SupabaseImageServiceRN {
   }
 
    static async getImagesForUser(userId: string): Promise<ImageRecord[]> {
-    try {
-      const { data, error } = await supabase
-        .from(this.TABLE_NAME)
-        .select('*')
-        .eq('user_id', userId) // Filter berdasarkan user_id
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('❌ Failed to fetch user images:', error);
-        return [];
-      }
-
-      console.log(`📚 Fetched ${data?.length || 0} images for user ${userId}`);
-      return data || [];
-
-    } catch (error) {
-      console.error('❌ Failed to get user images:', error);
-      return [];
-    }
-  }
+     try {
+       const { data, error } = await supabase
+         .from(this.TABLE_NAME)
+         .select('*')
+         .eq('user_id', userId) // Filter berdasarkan user_id
+         .order('created_at', { ascending: false });
+ 
+       if (error) {
+         console.error('❌ Failed to fetch user images:', error);
+         return [];
+       }
+ 
+       return data || [];
+ 
+     } catch (error) {
+       console.error('❌ Failed to get user images:', error);
+       return [];
+     }
+   }
 
   /**
    * Delete image from both storage and database
    */
   static async deleteImage(imageRecord: ImageRecord): Promise<boolean> {
     try {
-      console.log('🗑️ Deleting image:', imageRecord.id);
-      
-      
       if (imageRecord.url && !imageRecord.url.startsWith('data:')) {
         try {
-          
           const urlParts = imageRecord.url.split('/');
           const fileName = urlParts[urlParts.length - 1];
 
@@ -214,15 +199,12 @@ export class SupabaseImageServiceRN {
 
           if (storageError) {
             console.warn('⚠️ Failed to delete from storage (continuing):', storageError);
-          } else {
-            console.log('✅ Deleted from storage');
           }
         } catch (storageError) {
           console.warn('⚠️ Storage deletion error (continuing):', storageError);
         }
       }
 
-      
       const { error: dbError } = await supabase
         .from(this.TABLE_NAME)
         .delete()
@@ -233,7 +215,6 @@ export class SupabaseImageServiceRN {
         return false;
       }
 
-      console.log('✅ Image deleted successfully');
       return true;
 
     } catch (error) {
@@ -247,21 +228,18 @@ export class SupabaseImageServiceRN {
    */
   static async testConnection(): Promise<boolean> {
     try {
-      console.log('🧪 Testing Supabase connection...');
-      
       const { data, error } = await supabase
         .from(this.TABLE_NAME)
         .select('count(*)')
         .single();
-      
+
       if (error) {
         console.error('❌ Connection test failed:', error);
         return false;
       }
-      
-      console.log('✅ Supabase connection successful');
+
       return true;
-      
+
     } catch (error) {
       console.error('❌ Connection test error:', error);
       return false;

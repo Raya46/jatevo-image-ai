@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Animated, Text, View } from "react-native";
 
 interface LoadingModalProps {
@@ -18,30 +18,38 @@ const LoadingModal: React.FC<LoadingModalProps> = ({
   progress: directProgress,
 }) => {
   const [currentProgress, setCurrentProgress] = useState(0);
+  const progressBarWidth = useRef(new Animated.Value(0)).current;
 
   // Listen to animated progress changes
   useEffect(() => {
     if (animatedProgress) {
       const listener = animatedProgress.addListener(({ value }) => {
         setCurrentProgress(Math.round(value));
+        // Animate the progress bar width smoothly
+        Animated.timing(progressBarWidth, {
+          toValue: Math.round(value),
+          duration: 200, // Smooth animation duration
+          useNativeDriver: false,
+        }).start();
       });
       return () => {
         animatedProgress.removeListener(listener);
       };
     }
-  }, [animatedProgress]);
+  }, [animatedProgress, progressBarWidth]);
 
-  // Use direct progress if provided, otherwise use animated progress
-  const progress =
-    directProgress !== undefined ? directProgress : currentProgress;
-
-  // Debug logging
-  console.log("🎯 LoadingModal progress values:", {
-    directProgress,
-    currentProgress,
-    finalProgress: progress,
-    visible,
-  });
+  // Handle direct progress updates
+  useEffect(() => {
+    if (directProgress !== undefined) {
+      setCurrentProgress(directProgress);
+      // Animate the progress bar width smoothly
+      Animated.timing(progressBarWidth, {
+        toValue: directProgress,
+        duration: 200, // Smooth animation duration
+        useNativeDriver: false,
+      }).start();
+    }
+  }, [directProgress, progressBarWidth]);
 
   if (!visible) return null;
 
@@ -71,12 +79,15 @@ const LoadingModal: React.FC<LoadingModalProps> = ({
             marginBottom: 16,
           }}
         >
-          <View
+          <Animated.View
             style={{
               height: 8,
               borderRadius: 9999,
               backgroundColor: "#a855f7",
-              width: `${Math.max(0, Math.min(100, progress))}%`,
+              width: progressBarWidth.interpolate({
+                inputRange: [0, 100],
+                outputRange: ["0%", "100%"],
+              }),
             }}
           />
         </View>

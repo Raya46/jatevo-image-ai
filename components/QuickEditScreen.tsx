@@ -133,11 +133,6 @@ const QuickEditScreen: React.FC<ModifiedQuickEditScreenProps> = ({
 
       // Start the progress animation
       startProgressAnimation();
-
-      // For intermediate edits in QuickEdit, don't save to gallery
-      console.log(
-        "🎯 QuickEditScreen calling onImageEdit with progress callback"
-      );
       onImageEdit(
         action,
         imageUri,
@@ -145,7 +140,6 @@ const QuickEditScreen: React.FC<ModifiedQuickEditScreenProps> = ({
         shouldSaveToGallery || false,
         (progress: number) => {
           // Update progress bar with real progress
-          console.log("📊 QuickEditScreen progress callback:", progress);
           setCurrentProgress(progress);
           animatedProgress.setValue(progress);
           if (onProgress) onProgress(progress);

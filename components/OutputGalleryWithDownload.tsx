@@ -35,8 +35,7 @@ const OutputGalleryWithDownload: React.FC<OutputGalleryWithDownloadProps> = ({
     useBatchDownload();
 
   const handleQuickDownload = async (image: GalleryImage) => {
-    const success = await downloadImage(image, true);
-    console.log(success ? "✅ Download completed" : "❌ Download failed");
+    await downloadImage(image, true);
   };
 
   return (

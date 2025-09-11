@@ -78,12 +78,10 @@ export class ImageDownloadService {
   }
 
   static async downloadDataUrlImage(
-    dataUrl: string, 
+    dataUrl: string,
     imageId: number
   ): Promise<DownloadResult> {
     try {
-      console.log('🔄 Starting data URL image download...');
-      
       const hasPermission = await this.requestPermissions();
       if (!hasPermission) {
         return {
@@ -94,32 +92,20 @@ export class ImageDownloadService {
 
       const fileName = this.generateFileName(imageId);
       const fileUri = `${FileSystem.documentDirectory}${fileName}`;
-      
-      console.log('📁 Saving to:', fileUri);
 
-      
       const base64Data = dataUrl.split(',')[1];
-      
+
       if (!base64Data) {
         throw new Error('Invalid data URL format');
       }
 
-      
       await FileSystem.writeAsStringAsync(fileUri, base64Data, {
         encoding: FileSystem.EncodingType.Base64,
       });
 
-      console.log('✅ File saved to temp location');
-
-      
       await MediaLibrary.saveToLibraryAsync(fileUri);
 
-      console.log('✅ Image saved to gallery');
-
-      
       await FileSystem.deleteAsync(fileUri, { idempotent: true });
-
-      console.log('🧹 Temporary file cleaned up');
 
       return {
         success: true,
@@ -129,7 +115,7 @@ export class ImageDownloadService {
 
     } catch (error) {
       console.error('❌ Download failed:', error);
-      
+
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Download failed',
@@ -145,8 +131,6 @@ export class ImageDownloadService {
     imageId: number
   ): Promise<DownloadResult> {
     try {
-      console.log('🔄 Starting remote image download...');
-      console.log('🔗 URL:', imageUrl);
       
       
       const hasPermission = await this.requestPermissions();
@@ -160,7 +144,6 @@ export class ImageDownloadService {
       const fileName = this.generateFileName(imageId);
       const fileUri = `${FileSystem.documentDirectory}${fileName}`;
       
-      console.log('📁 Downloading to:', fileUri);
 
       
       const downloadResult = await FileSystem.downloadAsync(imageUrl, fileUri);
@@ -169,17 +152,9 @@ export class ImageDownloadService {
         throw new Error(`Download failed with status: ${downloadResult.status}`);
       }
 
-      console.log('✅ File downloaded successfully');
-
-      
       await MediaLibrary.saveToLibraryAsync(fileUri);
 
-      console.log('✅ Image saved to gallery');
-
-      
       await FileSystem.deleteAsync(fileUri, { idempotent: true });
-
-      console.log('🧹 Temporary file cleaned up');
 
       return {
         success: true,
@@ -202,30 +177,19 @@ export class ImageDownloadService {
    */
   static async downloadImage(image: GalleryImage): Promise<DownloadResult> {
     try {
-      console.log('📥 Starting image download for ID:', image.id);
-      console.log('🔗 URI type:', image.uri.startsWith('data:') ? 'Data URL' : 'Remote URL');
-
       let result: DownloadResult;
 
       if (image.uri.startsWith('data:')) {
-        
         result = await this.downloadDataUrlImage(image.uri, image.id);
       } else {
-        
         result = await this.downloadRemoteImage(image.uri, image.id);
-      }
-
-      if (result.success) {
-        console.log('🎉 Download completed successfully!');
-      } else {
-        console.error('❌ Download failed:', result.message);
       }
 
       return result;
 
     } catch (error) {
       console.error('❌ Download error:', error);
-      
+
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Unknown download error',
@@ -241,9 +205,6 @@ export class ImageDownloadService {
     onProgress?: (progress: number) => void
   ): Promise<DownloadResult> {
     try {
-      console.log('📥 Starting download with progress tracking...');
-      
-      
       const hasPermission = await this.requestPermissions();
       if (!hasPermission) {
         return {
@@ -253,7 +214,6 @@ export class ImageDownloadService {
       }
 
       if (image.uri.startsWith('data:')) {
-        
         if (onProgress) {
           onProgress(50);
           await new Promise(resolve => setTimeout(resolve, 100));
@@ -261,10 +221,9 @@ export class ImageDownloadService {
         }
         return await this.downloadDataUrlImage(image.uri, image.id);
       } else {
-        
         const fileName = this.generateFileName(image.id);
         const fileUri = `${FileSystem.documentDirectory}${fileName}`;
-        
+
         const downloadResumable = FileSystem.createDownloadResumable(
           image.uri,
           fileUri,
@@ -276,15 +235,13 @@ export class ImageDownloadService {
         );
 
         const result = await downloadResumable.downloadAsync();
-        
+
         if (!result || result.status !== 200) {
           throw new Error(`Download failed with status: ${result?.status}`);
         }
 
-        
         await MediaLibrary.saveToLibraryAsync(fileUri);
 
-        
         await FileSystem.deleteAsync(fileUri, { idempotent: true });
 
         return {
@@ -295,7 +252,7 @@ export class ImageDownloadService {
 
     } catch (error) {
       console.error('❌ Progress download failed:', error);
-      
+
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Download failed',

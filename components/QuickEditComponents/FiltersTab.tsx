@@ -16,16 +16,7 @@ const FiltersTab: React.FC<TabProps> = ({
 
     const filter = customPrompt.trim() || selectedFilter;
     if (filter) {
-      onImageEdit(
-        "filter",
-        quickEditImage.uri,
-        filter,
-        false,
-        (progress: number) => {
-          // Progress callback will be handled by the parent component
-          console.log(`🎨 FiltersTab progress callback: ${progress}%`);
-        }
-      );
+      onImageEdit("filter", quickEditImage.uri, filter, false);
     }
   };
 

@@ -154,9 +154,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!userId) return null;
 
     try {
-      console.log(
-        "🎯 AppContext generateWithPrompt calling generateImage with progress callback"
-      );
       const newImage = await generateImage(prompt, images, onProgress);
       if (newImage) {
         // Convert GalleryImage to ImageAsset
@@ -218,7 +215,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           );
           break;
         default:
-          console.log("Unknown edit action:", action);
           return null;
       }
 
