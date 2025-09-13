@@ -7,14 +7,14 @@ import { TabType } from "../../helper/QuickEdit/types";
 export const Header: React.FC<{ onBackToHome: () => void }> = ({
   onBackToHome,
 }) => (
-  <View className="bg-zinc-900 border-b border-zinc-700 px-4 py-3">
+  <View className="bg-white border-b border-gray-300 px-4 py-3">
     <View className="flex-row items-center">
       <TouchableOpacity
         onPress={onBackToHome}
         className="flex-row items-center mr-4"
       >
-        <Ionicons name="arrow-back" size={24} color="white" />
-        <Text className="text-white ml-2 font-semibold">Back</Text>
+        <Ionicons name="arrow-back" size={24} color="#374151" />
+        <Text className="text-gray-900 ml-2 font-semibold">Back</Text>
       </TouchableOpacity>
     </View>
   </View>
@@ -24,7 +24,7 @@ export const TabBar: React.FC<{
   activeTab: TabType;
   onTabChange: (tab: TabType) => void;
 }> = ({ activeTab, onTabChange }) => (
-  <View className="bg-zinc-900 border-b border-zinc-700">
+  <View className="bg-white border-b border-gray-300">
     <View className="flex-row justify-around pt-3 pb-3">
       {TABS.map((tab) => (
         <TouchableOpacity
@@ -35,11 +35,11 @@ export const TabBar: React.FC<{
           <Ionicons
             name={tab.icon as any}
             size={28}
-            color={activeTab === tab.id ? "#c084fc" : "white"}
+            color={activeTab === tab.id ? "#9333ea" : "#6b7280"}
           />
           <Text
             className={`${
-              activeTab === tab.id ? "text-purple-400" : "text-white"
+              activeTab === tab.id ? "text-purple-600" : "text-gray-600"
             } text-xs text-center`}
           >
             {tab.label}
@@ -69,11 +69,11 @@ export const BottomActionBar: React.FC<{
   canUndo,
   canRedo,
 }) => {
-  const disabledColor = "#3f3f46";
-  const enabledColor = "#a1a1aa";
+  const disabledColor = "#d1d5db";
+  const enabledColor = "#6b7280";
 
   return (
-    <View className="flex-row justify-around items-center p-3 bg-zinc-900  border-zinc-700">
+    <View className="flex-row justify-around items-center p-3 bg-white border-gray-300">
       <TouchableOpacity
         className="flex-col items-center"
         onPress={canUndo ? onUndo : undefined}
@@ -85,7 +85,7 @@ export const BottomActionBar: React.FC<{
           color={canUndo ? enabledColor : disabledColor}
         />
         <Text
-          className={`text-xs mt-1 ${canUndo ? "text-zinc-400" : "text-zinc-600"}`}
+          className={`text-xs mt-1 ${canUndo ? "text-gray-600" : "text-gray-400"}`}
         >
           Undo
         </Text>
@@ -102,7 +102,7 @@ export const BottomActionBar: React.FC<{
           color={canRedo ? enabledColor : disabledColor}
         />
         <Text
-          className={`text-xs mt-1 ${canRedo ? "text-zinc-400" : "text-zinc-600"}`}
+          className={`text-xs mt-1 ${canRedo ? "text-gray-600" : "text-gray-400"}`}
         >
           Redo
         </Text>
@@ -110,22 +110,22 @@ export const BottomActionBar: React.FC<{
 
       <TouchableOpacity className="flex-col items-center" onPress={onReset}>
         <Ionicons name="refresh" size={24} color={enabledColor} />
-        <Text className="text-zinc-400 text-xs mt-1">Reset</Text>
+        <Text className="text-gray-600 text-xs mt-1">Reset</Text>
       </TouchableOpacity>
 
       <TouchableOpacity className="flex-col items-center" onPress={onNew}>
         <Ionicons name="cloud-upload" size={24} color={enabledColor} />
-        <Text className="text-zinc-400 text-xs mt-1">New</Text>
+        <Text className="text-gray-600 text-xs mt-1">New</Text>
       </TouchableOpacity>
 
       <TouchableOpacity className="flex-col items-center" onPress={onSave}>
-        <Ionicons name="download" size={24} color="white" />
-        <Text className="text-white text-xs mt-1">Save</Text>
+        <Ionicons name="download" size={24} color="#374151" />
+        <Text className="text-gray-900 text-xs mt-1">Save</Text>
       </TouchableOpacity>
 
       <TouchableOpacity className="flex-col items-center" onPress={onCancel}>
         <Ionicons name="close" size={24} color={enabledColor} />
-        <Text className="text-zinc-400 text-xs mt-1">Cancel</Text>
+        <Text className="text-gray-600 text-xs mt-1">Cancel</Text>
       </TouchableOpacity>
     </View>
   );

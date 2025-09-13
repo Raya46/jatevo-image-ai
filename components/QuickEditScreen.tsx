@@ -358,10 +358,10 @@ const QuickEditScreen: React.FC<ModifiedQuickEditScreenProps> = ({
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView
-        style={{ flex: 1, backgroundColor: "black" }}
+        style={{ flex: 1, backgroundColor: "#f8f9fa" }}
         edges={["top", "bottom", "left", "right"]}
       >
-        <StatusBar style="light" />
+        <StatusBar style="dark" />
 
         <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
 
@@ -385,13 +385,15 @@ const QuickEditScreen: React.FC<ModifiedQuickEditScreenProps> = ({
             </View>
           ) : (
             <TouchableOpacity onPress={onRePickImage} className="items-center">
-              <Text className="text-white text-lg">Tap to select an image</Text>
+              <Text className="text-gray-900 text-lg">
+                Tap to select an image
+              </Text>
             </TouchableOpacity>
           )}
         </View>
 
         <View
-          className="bg-zinc-900/80 border-t border-zinc-700"
+          className="bg-white/95 border-t border-gray-300"
           style={{ paddingBottom: Math.max(insets.bottom) }}
         >
           {renderTabContent()}

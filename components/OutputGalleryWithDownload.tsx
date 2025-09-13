@@ -43,17 +43,17 @@ const OutputGalleryWithDownload: React.FC<OutputGalleryWithDownloadProps> = ({
       {/* Header dengan download status */}
       <View className="flex-row items-center justify-between mb-4">
         {totalActiveDownloads > 0 && (
-          <View className="flex-row items-center bg-blue-500/20 px-3 py-1 rounded-full">
-            <Ionicons name="download" size={14} color="#60a5fa" />
-            <Text className="text-blue-400 text-sm ml-1 font-medium">
+          <View className="flex-row items-center bg-blue-100 px-3 py-1 rounded-full border border-blue-200">
+            <Ionicons name="download" size={14} color="#3b82f6" />
+            <Text className="text-blue-700 text-sm ml-1 font-medium">
               {totalActiveDownloads} downloading
             </Text>
           </View>
         )}
         {isBatchDownloading && (
-          <View className="flex-row items-center bg-purple-500/20 px-3 py-1 rounded-full">
-            <Ionicons name="download" size={14} color="#a855f7" />
-            <Text className="text-purple-400 text-sm ml-1 font-medium">
+          <View className="flex-row items-center bg-blue-100 px-3 py-1 rounded-full border border-blue-200">
+            <Ionicons name="download" size={14} color="#3b82f6" />
+            <Text className="text-blue-700 text-sm ml-1 font-medium">
               Batch: {batchState.completed}/{batchState.total}
             </Text>
           </View>
@@ -62,23 +62,23 @@ const OutputGalleryWithDownload: React.FC<OutputGalleryWithDownloadProps> = ({
 
       {/* Initial Loading Overlay */}
       {isInitialLoading && (
-        <View className="absolute inset-0 bg-zinc-900/95 flex justify-center items-center rounded-2xl z-10">
+        <View className="absolute inset-0 bg-white/95 flex justify-center items-center rounded-2xl z-10">
           <View className="flex items-center">
             <View className="relative mb-4">
-              <View className="w-16 h-16 bg-purple-600 rounded-full flex justify-center items-center">
+              <View className="w-16 h-16 bg-blue-500 rounded-full flex justify-center items-center">
                 <Ionicons name="images" size={24} color="white" />
               </View>
-              <View className="absolute inset-0 w-16 h-16 bg-purple-400 rounded-full animate-pulse opacity-30" />
+              <View className="absolute inset-0 w-16 h-16 bg-blue-300 rounded-full animate-pulse opacity-30" />
             </View>
-            <Text className="text-white text-lg font-bold mb-2">
+            <Text className="text-gray-900 text-lg font-bold mb-2">
               Loading Gallery
             </Text>
-            <Text className="text-zinc-400 text-sm text-center max-w-xs">
+            <Text className="text-gray-600 text-sm text-center max-w-xs">
               Fetching your images from the cloud...
             </Text>
-            <View className="w-32 bg-zinc-700 rounded-full h-1 mt-4">
+            <View className="w-32 bg-gray-200 rounded-full h-1 mt-4">
               <View
-                className="bg-purple-500 h-1 rounded-full animate-pulse"
+                className="bg-blue-500 h-1 rounded-full animate-pulse"
                 style={{ width: "60%" }}
               />
             </View>
@@ -88,11 +88,11 @@ const OutputGalleryWithDownload: React.FC<OutputGalleryWithDownloadProps> = ({
 
       {galleryImages.length === 0 ? (
         <View className="flex-1 justify-center items-center py-8">
-          <Ionicons name="images-outline" size={48} color="#52525b" />
-          <Text className="text-zinc-500 text-center mt-4">
+          <Ionicons name="images-outline" size={48} color="#9ca3af" />
+          <Text className="text-gray-500 text-center mt-4">
             No images generated yet
           </Text>
-          <Text className="text-zinc-600 text-sm text-center mt-2">
+          <Text className="text-gray-600 text-sm text-center mt-2">
             Use the Prompt Engine above to create your first image
           </Text>
         </View>
@@ -106,11 +106,11 @@ const OutputGalleryWithDownload: React.FC<OutputGalleryWithDownloadProps> = ({
               return (
                 <View
                   key={img.id}
-                  className="w-[48%] aspect-square rounded-lg overflow-hidden relative mb-3 bg-zinc-800"
+                  className="w-[48%] aspect-square rounded-lg overflow-hidden relative mb-3 bg-gray-100"
                 >
                   {/* Loading placeholder */}
                   <View className="absolute inset-0 flex justify-center items-center">
-                    <Text className="text-zinc-500 text-xs">Loading...</Text>
+                    <Text className="text-gray-500 text-xs">Loading...</Text>
                   </View>
 
                   {/* Main Image */}
@@ -122,9 +122,9 @@ const OutputGalleryWithDownload: React.FC<OutputGalleryWithDownloadProps> = ({
 
                   {/* Download Progress Overlay */}
                   {downloading && (
-                    <View className="absolute inset-0 bg-black/50 flex justify-center items-center">
-                      <View className="bg-white/20 backdrop-blur p-3 rounded-full">
-                        <Text className="text-white font-bold text-lg">
+                    <View className="absolute inset-0 bg-black/30 flex justify-center items-center">
+                      <View className="bg-white/90 backdrop-blur p-3 rounded-full border border-gray-200">
+                        <Text className="text-gray-900 font-bold text-lg">
                           {progress}%
                         </Text>
                       </View>
@@ -133,7 +133,7 @@ const OutputGalleryWithDownload: React.FC<OutputGalleryWithDownloadProps> = ({
 
                   {/* Progress Bar */}
                   {downloading && (
-                    <View className="absolute bottom-0 left-0 right-0 h-1 bg-black/50">
+                    <View className="absolute bottom-0 left-0 right-0 h-1 bg-gray-200">
                       <View
                         className="h-full bg-blue-500"
                         style={{ width: `${progress}%` }}
@@ -171,24 +171,24 @@ const OutputGalleryWithDownload: React.FC<OutputGalleryWithDownloadProps> = ({
                       <TouchableOpacity
                         onPress={() => onEditImage(img)}
                         disabled={downloading}
-                        className="bg-black/70 p-2 rounded-full"
+                        className="bg-white/80 p-2 rounded-full border border-gray-300"
                       >
                         <MaterialIcons
                           name="edit"
                           size={16}
-                          color={downloading ? "#666" : "white"}
+                          color={downloading ? "#9ca3af" : "#374151"}
                         />
                       </TouchableOpacity>
 
                       <TouchableOpacity
                         onPress={() => handleQuickDownload(img)}
                         disabled={downloading}
-                        className="bg-black/70 p-2 rounded-full"
+                        className="bg-white/80 p-2 rounded-full border border-gray-300"
                       >
                         <Ionicons
                           name={downloading ? "hourglass" : "download"}
                           size={16}
-                          color={downloading ? "#60a5fa" : "white"}
+                          color={downloading ? "#3b82f6" : "#374151"}
                         />
                       </TouchableOpacity>
                     </View>
@@ -204,7 +204,7 @@ const OutputGalleryWithDownload: React.FC<OutputGalleryWithDownloadProps> = ({
                         <Ionicons name="cloud-done" size={12} color="white" />
                       </View>
                     ) : (
-                      <View className="bg-zinc-600 p-1 rounded-full">
+                      <View className="bg-gray-400 p-1 rounded-full">
                         <Ionicons
                           name="phone-portrait"
                           size={12}
@@ -222,7 +222,7 @@ const OutputGalleryWithDownload: React.FC<OutputGalleryWithDownloadProps> = ({
           {galleryImages.length > 1 && (
             <TouchableOpacity
               onPress={() => downloadMultiple(galleryImages, true)}
-              className="bg-purple-600 p-4 rounded-xl mt-4 flex-row items-center justify-center"
+              className="bg-blue-500 p-4 rounded-xl mt-4 flex-row items-center justify-center"
               disabled={totalActiveDownloads > 0 || isBatchDownloading}
             >
               <Ionicons name="download" size={20} color="white" />
@@ -236,18 +236,18 @@ const OutputGalleryWithDownload: React.FC<OutputGalleryWithDownloadProps> = ({
 
           {/* Batch Download Progress Overlay */}
           {isBatchDownloading && (
-            <View className="absolute inset-0 bg-black/60 flex justify-center items-center rounded-2xl">
-              <View className="bg-zinc-800 p-6 rounded-2xl flex items-center max-w-xs">
-                <Ionicons name="download" size={32} color="#a855f7" />
-                <Text className="text-white text-lg font-bold mt-2">
+            <View className="absolute inset-0 bg-black/40 flex justify-center items-center rounded-2xl">
+              <View className="bg-white p-6 rounded-2xl flex items-center max-w-xs border border-gray-200">
+                <Ionicons name="download" size={32} color="#3b82f6" />
+                <Text className="text-gray-900 text-lg font-bold mt-2">
                   Downloading Images...
                 </Text>
-                <Text className="text-zinc-400 text-sm mt-1 text-center">
+                <Text className="text-gray-600 text-sm mt-1 text-center">
                   {batchState.completed} of {batchState.total} completed
                 </Text>
-                <View className="w-full bg-zinc-700 rounded-full h-2 mt-4">
+                <View className="w-full bg-gray-200 rounded-full h-2 mt-4">
                   <View
-                    className="bg-purple-500 h-2 rounded-full"
+                    className="bg-blue-500 h-2 rounded-full"
                     style={{
                       width: `${
                         batchState.total > 0
@@ -257,7 +257,7 @@ const OutputGalleryWithDownload: React.FC<OutputGalleryWithDownloadProps> = ({
                     }}
                   />
                 </View>
-                <Text className="text-zinc-500 text-xs mt-2">
+                <Text className="text-gray-500 text-xs mt-2">
                   Other features remain accessible
                 </Text>
               </View>
@@ -266,8 +266,8 @@ const OutputGalleryWithDownload: React.FC<OutputGalleryWithDownloadProps> = ({
 
           {/* Debug info */}
           {__DEV__ && galleryImages.length > 0 && (
-            <View className="mt-4 p-3 bg-zinc-800 rounded-lg">
-              <Text className="text-zinc-400 text-xs font-bold">
+            <View className="mt-4 p-3 bg-gray-100 rounded-lg border border-gray-200">
+              <Text className="text-gray-600 text-xs font-bold">
                 Download Status: {totalActiveDownloads} active
               </Text>
             </View>

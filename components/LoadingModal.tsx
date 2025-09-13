@@ -54,8 +54,8 @@ const LoadingModal: React.FC<LoadingModalProps> = ({
   if (!visible) return null;
 
   return (
-    <View className="absolute inset-0 bg-black/80 flex justify-center items-center z-50">
-      <View className="bg-zinc-900 border border-zinc-700 rounded-3xl p-8 mx-6 max-w-sm w-full">
+    <View className="absolute inset-0 bg-black/60 flex justify-center items-center z-50">
+      <View className="bg-white border border-gray-300 rounded-3xl p-8 mx-6 max-w-sm w-full">
         <View className="flex justify-center items-center mb-6">
           <View className="relative">
             <View className="w-20 h-20 bg-purple-600 rounded-full flex justify-center items-center">
@@ -64,17 +64,17 @@ const LoadingModal: React.FC<LoadingModalProps> = ({
             <View className="absolute inset-0 w-20 h-20 bg-purple-400 rounded-full animate-pulse opacity-30" />
           </View>
         </View>
-        <Text className="text-white text-2xl font-bold text-center mb-2">
+        <Text className="text-gray-900 text-2xl font-bold text-center mb-2">
           {title}
         </Text>
-        <Text className="text-zinc-400 text-base text-center mb-6">
+        <Text className="text-gray-600 text-base text-center mb-6">
           {message}
         </Text>
         <View
           style={{
             width: "100%",
             height: 8,
-            backgroundColor: "#3f3f46",
+            backgroundColor: "#e5e7eb",
             borderRadius: 9999,
             marginBottom: 16,
           }}
@@ -91,7 +91,7 @@ const LoadingModal: React.FC<LoadingModalProps> = ({
             }}
           />
         </View>
-        <Text className="text-zinc-500 text-sm text-center italic">
+        <Text className="text-gray-500 text-sm text-center italic">
           &ldquo;Art takes time, but magic is worth waiting for ✨&rdquo;
         </Text>
       </View>

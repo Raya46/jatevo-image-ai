@@ -55,10 +55,10 @@ const CropTab: React.FC<CropTabProps> = ({
             key={mode.id}
             onPress={() => setCropMode(mode.id)}
             className={`px-4 py-2 rounded-full ${
-              cropMode === mode.id ? "bg-purple-600" : "bg-zinc-700"
+              cropMode === mode.id ? "bg-blue-500" : "bg-gray-200"
             }`}
           >
-            <Text className="text-white font-semibold">{mode.label}</Text>
+            <Text className="text-gray-900 font-semibold">{mode.label}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -67,10 +67,12 @@ const CropTab: React.FC<CropTabProps> = ({
         onPress={handleExecuteCrop}
         disabled={!canExecute}
         className={`rounded-lg p-3 w-full items-center ${
-          canExecute ? "bg-purple-600" : "bg-zinc-700"
+          canExecute ? "bg-blue-500" : "bg-gray-300"
         }`}
       >
-        <Text className="text-white font-bold">
+        <Text
+          className={`font-bold ${canExecute ? "text-white" : "text-gray-500"}`}
+        >
           {isLoading ? "Cropping..." : "Execute Crop"}
         </Text>
       </TouchableOpacity>

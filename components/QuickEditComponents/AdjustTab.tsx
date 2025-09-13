@@ -41,30 +41,32 @@ const AdjustTab: React.FC<TabProps> = ({
             key={preset}
             onPress={() => handlePresetSelect(preset)}
             className={`px-3 py-2 rounded-full m-1 ${
-              selectedPreset === preset ? "bg-purple-600" : "bg-zinc-700"
+              selectedPreset === preset ? "bg-blue-500" : "bg-gray-200"
             }`}
           >
-            <Text className="text-white">{preset}</Text>
+            <Text className="text-gray-900">{preset}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
       <TextInput
         placeholder="Or type a custom adjustment..."
-        className="bg-zinc-800 text-white rounded-lg p-3 w-full text-base mb-2"
+        className="bg-gray-50 text-gray-900 border border-gray-300 rounded-lg p-3 w-full text-base mb-2"
         value={customPrompt}
         onChangeText={handleCustomInput}
-        placeholderTextColor="#a1a1aa"
+        placeholderTextColor="#9ca3af"
       />
 
       <TouchableOpacity
         onPress={handleExecuteAdjust}
         disabled={!canExecute}
         className={`rounded-lg p-3 w-full items-center ${
-          canExecute ? "bg-purple-600" : "bg-zinc-700"
+          canExecute ? "bg-blue-500" : "bg-gray-300"
         }`}
       >
-        <Text className="text-white font-bold">
+        <Text
+          className={`font-bold ${canExecute ? "text-white" : "text-gray-500"}`}
+        >
           {isLoading ? "Adjusting..." : "Execute Adjust"}
         </Text>
       </TouchableOpacity>
