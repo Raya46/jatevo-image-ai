@@ -166,10 +166,10 @@ const MainScreen = () => {
       case "edit":
         if (!quickEditImage) {
           return (
-            <View className="flex-1 justify-center items-center p-4">
+            <View className="flex-1 items-center p-4">
               <TouchableOpacity
                 onPress={handleQuickEditPick}
-                className="bg-gray-100 border-2 border-dashed border-gray-300 rounded-xl p-8 w-full max-w-sm flex justify-center items-center"
+                className="bg-gray-100 mt-5 border-2 border-dashed border-gray-300 rounded-xl p-8 w-full max-w-sm flex justify-center items-center"
               >
                 <Text className="text-gray-600 text-lg text-center mb-2">
                   Select Image from Gallery
@@ -211,15 +211,10 @@ const MainScreen = () => {
 
       case "headshot":
         return (
-          <ScrollView
-            className="flex-1"
-            contentContainerStyle={{ paddingBottom: 100 }}
-          >
-            <ProfessionalHeadshot
-              onGenerate={handleGenerateFromPrompt}
-              userId={userId}
-            />
-          </ScrollView>
+          <ProfessionalHeadshot
+            onGenerate={handleGenerateFromPrompt}
+            userId={userId}
+          />
         );
 
       case "canvas":
