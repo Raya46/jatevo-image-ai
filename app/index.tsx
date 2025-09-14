@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import React, { useRef, useState } from "react";
 import {
@@ -13,13 +14,15 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import HomeCanvas from "../components/HomeCanvas";
 import LoadingModal from "../components/LoadingModal";
+import Onboarding from "../components/Onboarding";
 import OutputGalleryWithDownload from "../components/OutputGalleryWithDownload";
+import ProfessionalHeadshot from "../components/ProfessionalHeadshot";
 import PromptEngine from "../components/PromptEngine";
 import QuickEditScreen from "../components/QuickEditScreen";
 import { useAppContext } from "../contexts/AppContext";
 import { ImageAsset } from "../helper/QuickEdit/types";
 
-type TabType = "gallery" | "edit" | "prompt" | "canvas";
+type TabType = "gallery" | "edit" | "prompt" | "headshot" | "canvas";
 
 const MainScreen = () => {
   const {
@@ -37,15 +40,34 @@ const MainScreen = () => {
   const [quickEditImage, setQuickEditImage] = useState<ImageAsset | null>(null);
   const [latestGeneratedImage, setLatestGeneratedImage] =
     useState<ImageAsset | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const animatedProgress = useRef(new Animated.Value(0)).current;
 
   React.useEffect(() => {
+    checkOnboardingStatus();
     Animated.timing(animatedProgress, {
       toValue: 0,
       duration: 400,
       useNativeDriver: false,
     }).start();
   }, []);
+
+  const checkOnboardingStatus = async () => {
+    try {
+      const onboardingCompleted = await AsyncStorage.getItem(
+        "onboarding_completed"
+      );
+      if (!onboardingCompleted) {
+        setShowOnboarding(true);
+      }
+    } catch (error) {
+      console.error("Error checking onboarding status:", error);
+    }
+  };
+
+  const handleOnboardingComplete = () => {
+    setShowOnboarding(false);
+  };
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -56,8 +78,8 @@ const MainScreen = () => {
   const handleEditImage = (image: any) => {
     setQuickEditImage({
       uri: image.uri,
-      width: 1024,
-      height: 1024,
+      width: image.width || 1024,
+      height: image.height || 1024,
       base64: null,
     });
     setActiveTab("edit");
@@ -85,8 +107,8 @@ const MainScreen = () => {
         const asset = {
           uri: result.assets[0].uri,
           base64: null,
-          width: 1024,
-          height: 1024,
+          width: result.assets[0].width,
+          height: result.assets[0].height,
         };
         return asset;
       }
@@ -147,12 +169,12 @@ const MainScreen = () => {
             <View className="flex-1 justify-center items-center p-4">
               <TouchableOpacity
                 onPress={handleQuickEditPick}
-                className="bg-zinc-800 border-2 border-dashed border-zinc-600 rounded-xl p-8 w-full max-w-sm flex justify-center items-center"
+                className="bg-gray-100 border-2 border-dashed border-gray-300 rounded-xl p-8 w-full max-w-sm flex justify-center items-center"
               >
-                <Text className="text-zinc-400 text-lg text-center mb-2">
+                <Text className="text-gray-600 text-lg text-center mb-2">
                   Select Image from Gallery
                 </Text>
-                <Text className="text-zinc-500 text-sm text-center">
+                <Text className="text-gray-500 text-sm text-center">
                   Choose an image to start editing
                 </Text>
               </TouchableOpacity>
@@ -187,6 +209,19 @@ const MainScreen = () => {
           </ScrollView>
         );
 
+      case "headshot":
+        return (
+          <ScrollView
+            className="flex-1"
+            contentContainerStyle={{ paddingBottom: 100 }}
+          >
+            <ProfessionalHeadshot
+              onGenerate={handleGenerateFromPrompt}
+              userId={userId}
+            />
+          </ScrollView>
+        );
+
       case "canvas":
         return <HomeCanvas />;
 
@@ -195,18 +230,24 @@ const MainScreen = () => {
     }
   };
 
+  // Show onboarding if it's the first time
+  if (showOnboarding) {
+    return <Onboarding onComplete={handleOnboardingComplete} />;
+  }
+
   return (
-    <SafeAreaView className="flex-1 bg-black">
+    <SafeAreaView className="flex-1 bg-gray-50">
       {/* Header */}
-      <View className="p-4 border-b border-zinc-800">
-        <Text className="text-white text-3xl font-bold text-center mb-2">
-          JATEVO IMAGE GEN AI
+      <View className="p-4 border-b border-gray-300">
+        <Text className="text-gray-900 text-3xl font-bold text-center mb-2">
+          JATEVO IMAGE GEN
         </Text>
 
         {/* Horizontal Tabs */}
-        <View className="flex-row bg-zinc-900 rounded-full p-1 mt-4">
+        <View className="flex-row bg-white border border-gray-200 rounded-full p-1 mt-4">
           {[
             { id: "gallery" as TabType, label: "Gallery", icon: "images" },
+            { id: "headshot" as TabType, label: "Shot", icon: "person" },
             { id: "edit" as TabType, label: "Edit", icon: "create" },
             { id: "prompt" as TabType, label: "Prompt", icon: "sparkles" },
             { id: "canvas" as TabType, label: "Canvas", icon: "color-palette" },
@@ -215,17 +256,17 @@ const MainScreen = () => {
               key={tab.id}
               onPress={() => setActiveTab(tab.id)}
               className={`flex-1 flex-row items-center justify-center p-3 rounded-full ${
-                activeTab === tab.id ? "bg-purple-600" : ""
+                activeTab === tab.id ? "bg-blue-500" : ""
               }`}
             >
               <Ionicons
                 name={tab.icon as any}
                 size={16}
-                color={activeTab === tab.id ? "white" : "#9ca3af"}
+                color={activeTab === tab.id ? "white" : "#6b7280"}
               />
               <Text
                 className={`ml-2 font-semibold text-sm ${
-                  activeTab === tab.id ? "text-white" : "text-zinc-400"
+                  activeTab === tab.id ? "text-white" : "text-gray-600"
                 }`}
               >
                 {tab.label}

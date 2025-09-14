@@ -52,7 +52,7 @@ const ImageCard = React.forwardRef<
   const activeGesture = image && panGesture ? panGesture : tapGesture;
 
   const cardContent = (
-    <View className="w-full aspect-[3/4] bg-zinc-800 rounded-xl overflow-hidden border border-zinc-700">
+    <View className="w-full aspect-[3/4] bg-white rounded-xl overflow-hidden border border-gray-300">
       {image ? (
         <Image
           source={{ uri: image.uri }}
@@ -62,7 +62,7 @@ const ImageCard = React.forwardRef<
       ) : (
         // TouchableOpacity tidak lagi diperlukan di sini
         <View className="flex-1 justify-center items-center">
-          <Text className="text-zinc-400">Tap to Upload</Text>
+          <Text className="text-gray-600">Tap to Upload</Text>
         </View>
       )}
     </View>
@@ -70,7 +70,7 @@ const ImageCard = React.forwardRef<
 
   return (
     <View ref={ref} className="w-[45%] items-center" onLayout={onLayout}>
-      <Text className="text-lg text-gray-200 mb-2.5">{title}</Text>
+      <Text className="text-lg text-gray-800 mb-2.5">{title}</Text>
       <GestureDetector gesture={activeGesture}>{cardContent}</GestureDetector>
     </View>
   );
@@ -320,13 +320,10 @@ const HomeCanvas: React.FC = () => {
   }));
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: "black" }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#f8f9fa" }}>
       <SafeAreaView className="flex-1 bg-transparent items-center pt-5">
-        <Text className="text-3xl font-bold text-white mb-5">
-          Home Canvas AI
-        </Text>
         <View className="mx-4">
-          <Text className="text-white text-center">
+          <Text className="text-gray-700 text-center">
             Drag the object image to scene image and see magic happen
           </Text>
         </View>
@@ -364,15 +361,15 @@ const HomeCanvas: React.FC = () => {
           <View className="absolute bottom-5 w-full px-5 flex-row justify-around">
             <TouchableOpacity
               onPress={handleReset}
-              className="bg-zinc-700 px-5 py-3 rounded-full flex-1 mr-2 items-center border border-zinc-600"
+              className="bg-gray-200 px-5 py-3 rounded-full flex-1 mr-2 items-center border border-gray-300"
             >
-              <Text className="text-zinc-300 text-center font-semibold">
+              <Text className="text-gray-800 text-center font-semibold">
                 Reset
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={handleSave}
-              className="bg-purple-600 px-5 py-3 rounded-full flex-1 ml-2 items-center"
+              className="bg-blue-500 px-5 py-3 rounded-full flex-1 ml-2 items-center"
             >
               <Text className="text-white text-center font-semibold">Save</Text>
             </TouchableOpacity>
@@ -400,7 +397,7 @@ const HomeCanvas: React.FC = () => {
             animatedGhostStyle,
             { width: GHOST_IMAGE_SIZE, height: GHOST_IMAGE_SIZE },
           ]}
-          className="absolute rounded-xl border-2 border-white z-50"
+          className="absolute rounded-xl border-2 border-gray-800 z-50"
         >
           <Image
             source={{ uri: objectImage.uri }}

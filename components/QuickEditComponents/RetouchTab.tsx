@@ -71,10 +71,10 @@ const RetouchTab: React.FC<RetouchTabProps> = ({
         <TextInput
           ref={inputRef}
           placeholder="e.g., remove the person in the back"
-          className="bg-zinc-800 text-white rounded-lg p-3 text-base flex-1"
+          className="bg-gray-50 text-gray-900 border border-gray-300 rounded-lg p-3 text-base flex-1"
           value={prompt}
           onChangeText={setPrompt}
-          placeholderTextColor="#a1a1aa"
+          placeholderTextColor="#9ca3af"
           returnKeyType="done"
           blurOnSubmit
           onSubmitEditing={handleExecuteEdit}
@@ -83,10 +83,14 @@ const RetouchTab: React.FC<RetouchTabProps> = ({
           onPress={handleExecuteEdit}
           disabled={!canExecute}
           className={`rounded-lg px-4 p-3.5 justify-center ${
-            canExecute ? "bg-purple-600" : "bg-zinc-700"
+            canExecute ? "bg-blue-500" : "bg-gray-300"
           }`}
         >
-          <Text className="text-white font-bold">
+          <Text
+            className={`font-bold ${
+              canExecute ? "text-white" : "text-gray-500"
+            }`}
+          >
             {isLoading ? "..." : "Execute"}
           </Text>
         </TouchableOpacity>

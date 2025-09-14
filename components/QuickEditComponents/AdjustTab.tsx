@@ -34,40 +34,51 @@ const AdjustTab: React.FC<TabProps> = ({
     quickEditImage && !isLoading && (selectedPreset || customPrompt.trim());
 
   return (
-    <View className="p-4">
-      <View className="flex-row flex-wrap justify-center mb-2">
+    <View className="px-4 py-6">
+      <View className="flex-row flex-wrap justify-center mb-4">
         {ADJUSTMENT_PRESETS.map((preset) => (
           <TouchableOpacity
             key={preset}
             onPress={() => handlePresetSelect(preset)}
             className={`px-3 py-2 rounded-full m-1 ${
-              selectedPreset === preset ? "bg-purple-600" : "bg-zinc-700"
+              selectedPreset === preset ? "bg-blue-500" : "bg-gray-200"
             }`}
           >
-            <Text className="text-white">{preset}</Text>
+            <Text
+              className={
+                selectedPreset === preset ? "text-white" : "text-gray-900"
+              }
+            >
+              {preset}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <TextInput
-        placeholder="Or type a custom adjustment..."
-        className="bg-zinc-800 text-white rounded-lg p-3 w-full text-base mb-2"
-        value={customPrompt}
-        onChangeText={handleCustomInput}
-        placeholderTextColor="#a1a1aa"
-      />
-
-      <TouchableOpacity
-        onPress={handleExecuteAdjust}
-        disabled={!canExecute}
-        className={`rounded-lg p-3 w-full items-center ${
-          canExecute ? "bg-purple-600" : "bg-zinc-700"
-        }`}
-      >
-        <Text className="text-white font-bold">
-          {isLoading ? "Adjusting..." : "Execute Adjust"}
-        </Text>
-      </TouchableOpacity>
+      <View className="flex-row gap-4 items-center">
+        <TextInput
+          placeholder="Or type a custom adjustment..."
+          className="bg-gray-50 text-gray-900 border border-gray-300 rounded-lg p-3 text-base flex-1"
+          value={customPrompt}
+          onChangeText={handleCustomInput}
+          placeholderTextColor="#9ca3af"
+        />
+        <TouchableOpacity
+          onPress={handleExecuteAdjust}
+          disabled={!canExecute}
+          className={`rounded-lg px-4 p-3.5 justify-center ${
+            canExecute ? "bg-blue-500" : "bg-gray-300"
+          }`}
+        >
+          <Text
+            className={`font-bold ${
+              canExecute ? "text-white" : "text-gray-500"
+            }`}
+          >
+            {isLoading ? "..." : "Execute"}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };

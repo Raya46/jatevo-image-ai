@@ -237,10 +237,10 @@ const PromptEngine: React.FC<PromptEngineProps> = ({ onGenerate, onReset }) => {
       <View className="mb-4">
         {previewImage ? (
           <>
-            <Text className="text-zinc-400 text-sm mb-2 font-medium">
+            <Text className="text-gray-600 text-sm mb-2 font-medium">
               Generated Image
             </Text>
-            <View className="bg-zinc-800 border border-zinc-700 rounded-xl p-2">
+            <View className="bg-white border border-gray-300 rounded-xl p-2">
               <Image
                 source={{ uri: previewImage.uri }}
                 className="w-full h-48 rounded-lg"
@@ -249,15 +249,15 @@ const PromptEngine: React.FC<PromptEngineProps> = ({ onGenerate, onReset }) => {
               <View className="flex-row justify-around w-full mt-3">
                 <TouchableOpacity
                   onPress={handleReset}
-                  className="bg-zinc-700 px-4 py-2 rounded-full flex-1 mr-2 items-center border border-zinc-600"
+                  className="bg-gray-200 px-4 py-2 rounded-full flex-1 mr-2 items-center border border-gray-300"
                 >
-                  <Text className="text-zinc-300 text-center font-semibold">
+                  <Text className="text-gray-800 text-center font-semibold">
                     Reset
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={handleSave}
-                  className="bg-purple-600 px-4 py-2 rounded-full flex-1 ml-2 items-center"
+                  className="bg-blue-500 px-4 py-2 rounded-full flex-1 ml-2 items-center"
                 >
                   <Text className="text-white text-center font-semibold">
                     Save
@@ -267,13 +267,13 @@ const PromptEngine: React.FC<PromptEngineProps> = ({ onGenerate, onReset }) => {
             </View>
           </>
         ) : (
-          <View className="bg-zinc-800 border border-zinc-700 rounded-xl p-4 mb-4">
+          <View className="bg-gray-100 border border-gray-300 rounded-xl p-4 mb-4">
             <View className="flex justify-center items-center py-8">
-              <Ionicons name="image-outline" size={48} color="#71717a" />
-              <Text className="text-zinc-400 text-lg font-medium mt-2">
+              <Ionicons name="image-outline" size={48} color="#9ca3af" />
+              <Text className="text-gray-600 text-lg font-medium mt-2">
                 Your image will show here
               </Text>
-              <Text className="text-zinc-500 text-sm text-center mt-1">
+              <Text className="text-gray-500 text-sm text-center mt-1">
                 Generate an image using the prompt below
               </Text>
             </View>
@@ -281,30 +281,40 @@ const PromptEngine: React.FC<PromptEngineProps> = ({ onGenerate, onReset }) => {
         )}
       </View>
 
-      <View className="bg-zinc-900 border border-zinc-700 rounded-2xl p-4">
-        <Text className="text-white text-xl font-bold mb-4">Prompt Engine</Text>
+      <View className="bg-white border border-gray-300 rounded-2xl p-4">
+        <Text className="text-gray-900 text-xl font-bold mb-4">
+          Prompt Engine
+        </Text>
 
-        <View className="flex-row bg-zinc-800 rounded-full mb-4">
+        <View className="flex-row bg-gray-100 rounded-full mb-4 border border-gray-200">
           <TouchableOpacity
             onPress={() => {
               setEngineMode("text-to-image");
               setRefImages([]);
             }}
             className={`flex-1 p-3 rounded-full ${
-              engineMode === "text-to-image" ? "bg-purple-600" : ""
+              engineMode === "text-to-image" ? "bg-blue-500" : ""
             }`}
           >
-            <Text className="text-white text-center font-semibold text-sm">
+            <Text
+              className={`text-center font-semibold text-sm ${
+                engineMode === "text-to-image" ? "text-white" : "text-gray-700"
+              }`}
+            >
               Text to Image
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setEngineMode("image-to-image")}
             className={`flex-1 p-3 rounded-full ${
-              engineMode === "image-to-image" ? "bg-purple-600" : ""
+              engineMode === "image-to-image" ? "bg-blue-500" : ""
             }`}
           >
-            <Text className="text-white text-center font-semibold text-sm">
+            <Text
+              className={`text-center font-semibold text-sm ${
+                engineMode === "image-to-image" ? "text-white" : "text-gray-700"
+              }`}
+            >
               Image to Image
             </Text>
           </TouchableOpacity>
@@ -312,7 +322,7 @@ const PromptEngine: React.FC<PromptEngineProps> = ({ onGenerate, onReset }) => {
 
         {engineMode === "image-to-image" && (
           <View className="mb-4">
-            <Text className="text-zinc-400 mb-2 font-medium">
+            <Text className="text-gray-600 mb-2 font-medium">
               Reference Images ({refImages.length}/9)
             </Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -321,10 +331,10 @@ const PromptEngine: React.FC<PromptEngineProps> = ({ onGenerate, onReset }) => {
                   <TouchableOpacity
                     onPress={handleUploadRefImage}
                     disabled={isGenerating}
-                    className="bg-zinc-800 border-2 border-dashed border-zinc-600 rounded-lg h-20 w-20 flex justify-center items-center mr-3"
+                    className="bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg h-20 w-20 flex justify-center items-center mr-3"
                   >
-                    <Ionicons name="add" size={24} color="#a1a1aa" />
-                    <Text className="text-zinc-500 text-xs mt-1">Add</Text>
+                    <Ionicons name="add" size={24} color="#6b7280" />
+                    <Text className="text-gray-500 text-xs mt-1">Add</Text>
                   </TouchableOpacity>
                 )}
                 {refImages.map((image, index) => (
@@ -349,14 +359,14 @@ const PromptEngine: React.FC<PromptEngineProps> = ({ onGenerate, onReset }) => {
         )}
 
         <View className="mb-4">
-          <Text className="text-zinc-400 mb-2 font-medium">Prompt</Text>
+          <Text className="text-gray-600 mb-2 font-medium">Prompt</Text>
           <TextInput
             placeholder="Describe the image you want to generate..."
-            className="bg-zinc-800 text-white rounded-lg p-4 h-32 w-full text-base"
+            className="bg-gray-50 text-gray-900 border border-gray-300 rounded-lg p-4 h-32 w-full text-base"
             value={prompt}
             onChangeText={setPrompt}
             multiline
-            placeholderTextColor="#a1a1aa"
+            placeholderTextColor="#9ca3af"
             editable={!isGenerating}
             textAlignVertical="top"
           />
@@ -366,12 +376,12 @@ const PromptEngine: React.FC<PromptEngineProps> = ({ onGenerate, onReset }) => {
           onPress={handleGenerate}
           disabled={isGenerating || !prompt.trim()}
           className={`rounded-full p-4 w-full items-center ${
-            isGenerating || !prompt.trim() ? "bg-zinc-700" : "bg-purple-600"
+            isGenerating || !prompt.trim() ? "bg-gray-300" : "bg-blue-500"
           }`}
         >
           <Text
             className={`font-bold text-lg ${
-              isGenerating || !prompt.trim() ? "text-zinc-400" : "text-white"
+              isGenerating || !prompt.trim() ? "text-gray-500" : "text-white"
             }`}
           >
             {isGenerating ? "Generating..." : "Generate Image"}

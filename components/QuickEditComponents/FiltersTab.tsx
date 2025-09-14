@@ -34,40 +34,51 @@ const FiltersTab: React.FC<TabProps> = ({
     quickEditImage && !isLoading && (selectedFilter || customPrompt.trim());
 
   return (
-    <View className="p-4">
-      <View className="flex-row justify-center gap-2 mb-2">
+    <View className="px-4 py-6">
+      <View className="flex-row justify-center gap-2 mb-4">
         {FILTER_PRESETS.map((filter) => (
           <TouchableOpacity
             key={filter}
             onPress={() => handleFilterSelect(filter)}
             className={`px-4 py-2 rounded-full ${
-              selectedFilter === filter ? "bg-purple-600" : "bg-zinc-700"
+              selectedFilter === filter ? "bg-blue-500" : "bg-gray-200"
             }`}
           >
-            <Text className="text-white">{filter}</Text>
+            <Text
+              className={
+                selectedFilter === filter ? "text-white" : "text-gray-900"
+              }
+            >
+              {filter}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <TextInput
-        placeholder="Or create a custom filter..."
-        className="bg-zinc-800 text-white rounded-lg p-3 w-full text-base mb-2"
-        value={customPrompt}
-        onChangeText={handleCustomInput}
-        placeholderTextColor="#a1a1aa"
-      />
-
-      <TouchableOpacity
-        onPress={handleExecuteFilter}
-        disabled={!canExecute}
-        className={`rounded-lg p-3 w-full items-center ${
-          canExecute ? "bg-purple-600" : "bg-zinc-700"
-        }`}
-      >
-        <Text className="text-white font-bold">
-          {isLoading ? "Applying Filter..." : "Execute Filter"}
-        </Text>
-      </TouchableOpacity>
+      <View className="flex-row gap-4 items-center">
+        <TextInput
+          placeholder="Or create a custom filter..."
+          className="bg-gray-50 text-gray-900 border border-gray-300 rounded-lg p-3 text-base flex-1"
+          value={customPrompt}
+          onChangeText={handleCustomInput}
+          placeholderTextColor="#9ca3af"
+        />
+        <TouchableOpacity
+          onPress={handleExecuteFilter}
+          disabled={!canExecute}
+          className={`rounded-lg px-4 p-3.5 justify-center ${
+            canExecute ? "bg-blue-500" : "bg-gray-300"
+          }`}
+        >
+          <Text
+            className={`font-bold ${
+              canExecute ? "text-white" : "text-gray-500"
+            }`}
+          >
+            {isLoading ? "..." : "Execute"}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
