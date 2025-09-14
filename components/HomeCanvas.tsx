@@ -322,9 +322,6 @@ const HomeCanvas: React.FC = () => {
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#f8f9fa" }}>
       <SafeAreaView className="flex-1 bg-transparent items-center pt-5">
-        <Text className="text-3xl font-bold text-gray-900 mb-5">
-          Home Canvas AI
-        </Text>
         <View className="mx-4">
           <Text className="text-gray-700 text-center">
             Drag the object image to scene image and see magic happen

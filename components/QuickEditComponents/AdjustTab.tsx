@@ -34,8 +34,8 @@ const AdjustTab: React.FC<TabProps> = ({
     quickEditImage && !isLoading && (selectedPreset || customPrompt.trim());
 
   return (
-    <View className="p-4">
-      <View className="flex-row flex-wrap justify-center mb-2">
+    <View className="px-4 py-6">
+      <View className="flex-row flex-wrap justify-center mb-4">
         {ADJUSTMENT_PRESETS.map((preset) => (
           <TouchableOpacity
             key={preset}
@@ -44,32 +44,41 @@ const AdjustTab: React.FC<TabProps> = ({
               selectedPreset === preset ? "bg-blue-500" : "bg-gray-200"
             }`}
           >
-            <Text className="text-gray-900">{preset}</Text>
+            <Text
+              className={
+                selectedPreset === preset ? "text-white" : "text-gray-900"
+              }
+            >
+              {preset}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <TextInput
-        placeholder="Or type a custom adjustment..."
-        className="bg-gray-50 text-gray-900 border border-gray-300 rounded-lg p-3 w-full text-base mb-2"
-        value={customPrompt}
-        onChangeText={handleCustomInput}
-        placeholderTextColor="#9ca3af"
-      />
-
-      <TouchableOpacity
-        onPress={handleExecuteAdjust}
-        disabled={!canExecute}
-        className={`rounded-lg p-3 w-full items-center ${
-          canExecute ? "bg-blue-500" : "bg-gray-300"
-        }`}
-      >
-        <Text
-          className={`font-bold ${canExecute ? "text-white" : "text-gray-500"}`}
+      <View className="flex-row gap-4 items-center">
+        <TextInput
+          placeholder="Or type a custom adjustment..."
+          className="bg-gray-50 text-gray-900 border border-gray-300 rounded-lg p-3 text-base flex-1"
+          value={customPrompt}
+          onChangeText={handleCustomInput}
+          placeholderTextColor="#9ca3af"
+        />
+        <TouchableOpacity
+          onPress={handleExecuteAdjust}
+          disabled={!canExecute}
+          className={`rounded-lg px-4 p-3.5 justify-center ${
+            canExecute ? "bg-blue-500" : "bg-gray-300"
+          }`}
         >
-          {isLoading ? "Adjusting..." : "Execute Adjust"}
-        </Text>
-      </TouchableOpacity>
+          <Text
+            className={`font-bold ${
+              canExecute ? "text-white" : "text-gray-500"
+            }`}
+          >
+            {isLoading ? "..." : "Execute"}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };

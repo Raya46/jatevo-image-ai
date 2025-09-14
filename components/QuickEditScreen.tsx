@@ -1,6 +1,5 @@
 import * as FileSystem from "expo-file-system";
 import * as MediaLibrary from "expo-media-library";
-import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
@@ -75,6 +74,10 @@ const QuickEditScreen: React.FC<ModifiedQuickEditScreenProps> = ({
 
   const { present, canUndo, canRedo, push, undo, redo, setInitial } =
     useHistory<ImageAsset | null>(quickEditImage);
+
+  console.log("QuickEditScreen: present value:", present);
+  console.log("QuickEditScreen: quickEditImage prop:", quickEditImage);
+  console.log("QuickEditScreen: present?.uri exists:", !!present?.uri);
   const [imageLayout, setImageLayout] = useState<{
     width: number;
     height: number;
@@ -111,7 +114,16 @@ const QuickEditScreen: React.FC<ModifiedQuickEditScreenProps> = ({
   const prevPropImage = useRef<ImageAsset | null>(quickEditImage);
   useEffect(() => {
     if (!isSameImage(prevPropImage.current, quickEditImage)) {
-      setInitial(quickEditImage ?? null);
+      console.log("QuickEditScreen: Received image:", quickEditImage);
+      if (quickEditImage) {
+        console.log(
+          "QuickEditScreen: Setting initial image with URI:",
+          quickEditImage.uri
+        );
+        setInitial(quickEditImage);
+      } else {
+        setInitial(null);
+      }
       prevPropImage.current = quickEditImage ?? null;
       setCropRegion(null);
       setImageLayout(null);
@@ -359,19 +371,21 @@ const QuickEditScreen: React.FC<ModifiedQuickEditScreenProps> = ({
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView
         style={{ flex: 1, backgroundColor: "#f8f9fa" }}
-        edges={["top", "bottom", "left", "right"]}
+        edges={["bottom", "left", "right"]}
       >
-        <StatusBar style="dark" />
+        <View className="absolute top-0 left-0 right-0">
+          <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
+        </View>
 
-        <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
-
-        <View className="flex-1 items-center justify-center p-4">
+        <View
+          className="flex-1 items-center justify-center p-4"
+          style={{ paddingTop: 90 }}
+        >
           {present?.uri ? (
-            <View className="w-full h-full">
+            <View className="items-center">
               <Image
-                key={present.uri}
                 source={{ uri: present.uri }}
-                className="w-full h-full"
+                style={{ width: 250, height: 320 }}
                 resizeMode="contain"
                 onLayout={onImageLayout}
               />
@@ -392,23 +406,22 @@ const QuickEditScreen: React.FC<ModifiedQuickEditScreenProps> = ({
           )}
         </View>
 
-        <View
-          className="bg-white/95 border-t border-gray-300"
-          style={{ paddingBottom: Math.max(insets.bottom) }}
-        >
+        <View className="bg-white/95 border-t border-gray-300">
           {renderTabContent()}
         </View>
 
-        <BottomActionBar
-          onUndo={undo}
-          onRedo={redo}
-          onReset={handleReset}
-          onNew={handleNew}
-          onSave={handleSave}
-          onCancel={handleCancel}
-          canUndo={canUndo}
-          canRedo={canRedo}
-        />
+        <View className="absolute bottom-0 left-0 right-0">
+          <BottomActionBar
+            onUndo={undo}
+            onRedo={redo}
+            onReset={handleReset}
+            onNew={handleNew}
+            onSave={handleSave}
+            onCancel={handleCancel}
+            canUndo={canUndo}
+            canRedo={canRedo}
+          />
+        </View>
 
         <LoadingModal
           visible={isSaving || isEditing}

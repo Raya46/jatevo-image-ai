@@ -48,34 +48,39 @@ const CropTab: React.FC<CropTabProps> = ({
   const canExecute = quickEditImage && !isLoading && cropRegion;
 
   return (
-    <View className="p-4">
-      <View className="flex-row justify-center gap-2 mb-4">
-        {CROP_MODES.map((mode) => (
-          <TouchableOpacity
-            key={mode.id}
-            onPress={() => setCropMode(mode.id)}
-            className={`px-4 py-2 rounded-full ${
-              cropMode === mode.id ? "bg-blue-500" : "bg-gray-200"
+    <View className="px-4 py-6">
+      <View className="flex-row gap-4 items-center">
+        <View className="flex-row gap-2 flex-1">
+          {CROP_MODES.map((mode) => (
+            <TouchableOpacity
+              key={mode.id}
+              onPress={() => setCropMode(mode.id)}
+              className={`px-3 py-2 rounded-full flex-1 ${
+                cropMode === mode.id ? "bg-blue-500" : "bg-gray-200"
+              }`}
+            >
+              <Text className="text-gray-900 font-semibold text-center">
+                {mode.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <TouchableOpacity
+          onPress={handleExecuteCrop}
+          disabled={!canExecute}
+          className={`rounded-lg px-4 p-3.5 justify-center ${
+            canExecute ? "bg-blue-500" : "bg-gray-300"
+          }`}
+        >
+          <Text
+            className={`font-bold ${
+              canExecute ? "text-white" : "text-gray-500"
             }`}
           >
-            <Text className="text-gray-900 font-semibold">{mode.label}</Text>
-          </TouchableOpacity>
-        ))}
+            {isLoading ? "..." : "Execute"}
+          </Text>
+        </TouchableOpacity>
       </View>
-
-      <TouchableOpacity
-        onPress={handleExecuteCrop}
-        disabled={!canExecute}
-        className={`rounded-lg p-3 w-full items-center ${
-          canExecute ? "bg-blue-500" : "bg-gray-300"
-        }`}
-      >
-        <Text
-          className={`font-bold ${canExecute ? "text-white" : "text-gray-500"}`}
-        >
-          {isLoading ? "Cropping..." : "Execute Crop"}
-        </Text>
-      </TouchableOpacity>
     </View>
   );
 };

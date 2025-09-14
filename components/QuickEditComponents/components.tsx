@@ -35,11 +35,11 @@ export const TabBar: React.FC<{
           <Ionicons
             name={tab.icon as any}
             size={28}
-            color={activeTab === tab.id ? "#9333ea" : "#6b7280"}
+            color={activeTab === tab.id ? "#3b82f6" : "#6b7280"}
           />
           <Text
             className={`${
-              activeTab === tab.id ? "text-purple-600" : "text-gray-600"
+              activeTab === tab.id ? "text-blue-600" : "text-gray-600"
             } text-xs text-center`}
           >
             {tab.label}

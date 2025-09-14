@@ -54,14 +54,14 @@ const LoadingModal: React.FC<LoadingModalProps> = ({
   if (!visible) return null;
 
   return (
-    <View className="absolute inset-0 bg-black/60 flex justify-center items-center z-50">
+    <View className="absolute top-0 left-0 right-0 bottom-0 bg-black/60 flex justify-center items-center z-50">
       <View className="bg-white border border-gray-300 rounded-3xl p-8 mx-6 max-w-sm w-full">
         <View className="flex justify-center items-center mb-6">
           <View className="relative">
-            <View className="w-20 h-20 bg-purple-600 rounded-full flex justify-center items-center">
+            <View className="w-20 h-20 bg-blue-500 rounded-full flex justify-center items-center">
               <Ionicons name="sparkles" size={32} color="white" />
             </View>
-            <View className="absolute inset-0 w-20 h-20 bg-purple-400 rounded-full animate-pulse opacity-30" />
+            <View className="absolute inset-0 w-20 h-20 bg-blue-300 rounded-full animate-pulse opacity-30" />
           </View>
         </View>
         <Text className="text-gray-900 text-2xl font-bold text-center mb-2">
@@ -83,7 +83,7 @@ const LoadingModal: React.FC<LoadingModalProps> = ({
             style={{
               height: 8,
               borderRadius: 9999,
-              backgroundColor: "#a855f7",
+              backgroundColor: "#3b82f6",
               width: progressBarWidth.interpolate({
                 inputRange: [0, 100],
                 outputRange: ["0%", "100%"],

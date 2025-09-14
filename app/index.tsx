@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import React, { useRef, useState } from "react";
 import {
@@ -13,6 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import HomeCanvas from "../components/HomeCanvas";
 import LoadingModal from "../components/LoadingModal";
+import Onboarding from "../components/Onboarding";
 import OutputGalleryWithDownload from "../components/OutputGalleryWithDownload";
 import ProfessionalHeadshot from "../components/ProfessionalHeadshot";
 import PromptEngine from "../components/PromptEngine";
@@ -38,15 +40,34 @@ const MainScreen = () => {
   const [quickEditImage, setQuickEditImage] = useState<ImageAsset | null>(null);
   const [latestGeneratedImage, setLatestGeneratedImage] =
     useState<ImageAsset | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const animatedProgress = useRef(new Animated.Value(0)).current;
 
   React.useEffect(() => {
+    checkOnboardingStatus();
     Animated.timing(animatedProgress, {
       toValue: 0,
       duration: 400,
       useNativeDriver: false,
     }).start();
   }, []);
+
+  const checkOnboardingStatus = async () => {
+    try {
+      const onboardingCompleted = await AsyncStorage.getItem(
+        "onboarding_completed"
+      );
+      if (!onboardingCompleted) {
+        setShowOnboarding(true);
+      }
+    } catch (error) {
+      console.error("Error checking onboarding status:", error);
+    }
+  };
+
+  const handleOnboardingComplete = () => {
+    setShowOnboarding(false);
+  };
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -57,8 +78,8 @@ const MainScreen = () => {
   const handleEditImage = (image: any) => {
     setQuickEditImage({
       uri: image.uri,
-      width: 1024,
-      height: 1024,
+      width: image.width || 1024,
+      height: image.height || 1024,
       base64: null,
     });
     setActiveTab("edit");
@@ -86,8 +107,8 @@ const MainScreen = () => {
         const asset = {
           uri: result.assets[0].uri,
           base64: null,
-          width: 1024,
-          height: 1024,
+          width: result.assets[0].width,
+          height: result.assets[0].height,
         };
         return asset;
       }
@@ -194,7 +215,10 @@ const MainScreen = () => {
             className="flex-1"
             contentContainerStyle={{ paddingBottom: 100 }}
           >
-            <ProfessionalHeadshot onGenerate={handleGenerateFromPrompt} />
+            <ProfessionalHeadshot
+              onGenerate={handleGenerateFromPrompt}
+              userId={userId}
+            />
           </ScrollView>
         );
 
@@ -206,12 +230,17 @@ const MainScreen = () => {
     }
   };
 
+  // Show onboarding if it's the first time
+  if (showOnboarding) {
+    return <Onboarding onComplete={handleOnboardingComplete} />;
+  }
+
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
       {/* Header */}
       <View className="p-4 border-b border-gray-300">
         <Text className="text-gray-900 text-3xl font-bold text-center mb-2">
-          JATEVO IMAGE GEN AI
+          JATEVO IMAGE GEN
         </Text>
 
         {/* Horizontal Tabs */}
