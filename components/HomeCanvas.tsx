@@ -389,7 +389,6 @@ const HomeCanvas: React.FC = () => {
         progress={currentProgress}
       />
 
-      {/* --- PERBAIKAN: Ghost image sekarang menjadi sibling dari SafeAreaView --- */}
       {objectImage && (
         <Animated.View
           pointerEvents="none"

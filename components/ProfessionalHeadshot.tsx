@@ -7,11 +7,11 @@ import {
   Alert,
   Animated,
   Image,
-  ScrollView,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { ImageAsset } from "../helper/QuickEdit/types";
 import { SupabaseImageServiceRN } from "../services/supabaseService";
 import LoadingModal from "./LoadingModal";
@@ -69,6 +69,28 @@ const ProfessionalHeadshot: React.FC<ProfessionalHeadshotProps> = ({
     }
   };
 
+  const startProgressAnimation = () => {
+    animatedProgress.setValue(0);
+    Animated.timing(animatedProgress, {
+      toValue: 90,
+      duration: 2500,
+      useNativeDriver: false,
+    }).start();
+  };
+
+  const completeProgressAnimation = () => {
+    Animated.timing(animatedProgress, {
+      toValue: 100,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+  };
+
+  const resetProgressAnimation = () => {
+    setCurrentProgress(0);
+    animatedProgress.setValue(0);
+  };
+
   const generateHeadshot = async () => {
     if (!selectedImage) {
       Alert.alert("Missing Image", "Please select an image first");
@@ -76,14 +98,10 @@ const ProfessionalHeadshot: React.FC<ProfessionalHeadshotProps> = ({
     }
 
     setIsGenerating(true);
-    setCurrentProgress(0);
+    resetProgressAnimation();
 
     // Start progress animation
-    Animated.timing(animatedProgress, {
-      toValue: 90,
-      duration: 2500,
-      useNativeDriver: false,
-    }).start();
+    startProgressAnimation();
 
     try {
       // Default system prompt for professional headshot generation with professional background
@@ -100,20 +118,17 @@ const ProfessionalHeadshot: React.FC<ProfessionalHeadshotProps> = ({
 
       if (result) {
         setGeneratedImage(result);
-        Animated.timing(animatedProgress, {
-          toValue: 100,
-          duration: 300,
-          useNativeDriver: false,
-        }).start();
+        completeProgressAnimation();
+        setCurrentProgress(100);
       }
     } catch (error) {
       console.error("Generation error:", error);
+      resetProgressAnimation();
       Alert.alert("Error", "Failed to generate image");
     } finally {
       setTimeout(() => {
         setIsGenerating(false);
-        setCurrentProgress(0);
-        animatedProgress.setValue(0);
+        resetProgressAnimation();
       }, 600);
     }
   };
@@ -125,40 +140,58 @@ const ProfessionalHeadshot: React.FC<ProfessionalHeadshotProps> = ({
     }
 
     setIsSaving(true);
+    resetProgressAnimation();
 
     try {
-      // Request media library permissions
+      // Step 1: Request permissions (10%)
+      animatedProgress.setValue(10);
+      setCurrentProgress(10);
       const { status } = await MediaLibrary.requestPermissionsAsync();
       if (status !== "granted") {
+        resetProgressAnimation();
         Alert.alert("Permission needed", "Need permission to save to gallery");
         setIsSaving(false);
         return;
       }
 
-      // Save to gallery first
+      // Step 2: Save to gallery (40%)
+      animatedProgress.setValue(40);
+      setCurrentProgress(40);
       await MediaLibrary.saveToLibraryAsync(generatedImage.uri);
 
-      // Convert image to base64 for Supabase upload
+      // Step 3: Convert to base64 (70%)
+      animatedProgress.setValue(70);
+      setCurrentProgress(70);
       const base64 = await FileSystem.readAsStringAsync(generatedImage.uri, {
         encoding: FileSystem.EncodingType.Base64,
       });
       const dataURL = `data:image/jpeg;base64,${base64}`;
 
-      // Save to Supabase database
+      // Step 4: Upload to Supabase (90% - 100%)
+      animatedProgress.setValue(90);
+      setCurrentProgress(90);
       const result = await SupabaseImageServiceRN.uploadAndSaveImage(
         dataURL,
         userId,
         (progress: number) => {
-          // Progress callback if needed
+          // Map Supabase progress (5%-100%) to remaining progress (90%-100%)
+          const mappedProgress = 90 + progress * 0.1;
+          setCurrentProgress(mappedProgress);
+          animatedProgress.setValue(mappedProgress);
         }
       );
 
       if (result.success) {
-        Alert.alert(
-          "Success",
-          "Image saved to gallery and cloud successfully!"
-        );
+        completeProgressAnimation();
+        setCurrentProgress(100);
+        setTimeout(() => {
+          Alert.alert(
+            "Success",
+            "Image saved to gallery and cloud successfully!"
+          );
+        }, 300);
       } else {
+        resetProgressAnimation();
         Alert.alert(
           "Partial Success",
           "Image saved to gallery but failed to save to cloud"
@@ -166,9 +199,13 @@ const ProfessionalHeadshot: React.FC<ProfessionalHeadshotProps> = ({
       }
     } catch (error) {
       console.error("Save error:", error);
+      resetProgressAnimation();
       Alert.alert("Error", "Failed to save image");
     } finally {
-      setIsSaving(false);
+      setTimeout(() => {
+        setIsSaving(false);
+        resetProgressAnimation();
+      }, 600);
     }
   };
 
@@ -178,121 +215,133 @@ const ProfessionalHeadshot: React.FC<ProfessionalHeadshotProps> = ({
   };
 
   return (
-    <View className="flex-1">
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 16 }}>
-        <Text className="text-gray-900 text-2xl font-bold mb-6 text-center">
-          Professional Headshot
-        </Text>
-
-        {/* Image Selection */}
-        <View className="mb-6">
-          <Text className="text-gray-700 text-lg font-semibold mb-3">
-            Select Your Photo
-          </Text>
-          {selectedImage ? (
-            <View className="relative">
-              <Image
-                source={{ uri: selectedImage.uri }}
-                className="w-full h-48 rounded-lg"
-                resizeMode="contain"
-              />
-              <TouchableOpacity
-                onPress={() => setSelectedImage(null)}
-                className="absolute top-2 right-2 bg-red-500 rounded-full w-8 h-8 flex justify-center items-center"
-              >
-                <Text className="text-white font-bold">×</Text>
-              </TouchableOpacity>
+    <SafeAreaView className="flex-1 items-center">
+      {(selectedImage || generatedImage) && (
+        <View
+          className="flex-row justify-between mb-4"
+          style={{ minHeight: 300 }}
+        >
+          {/* Original Image */}
+          <View className="w-[48%]">
+            <Text className="text-gray-700 text-sm font-semibold mb-2 text-center">
+              Original Photo
+            </Text>
+            <View className="aspect-[3/4] bg-white border border-gray-300 rounded-lg p-2 relative">
+              {selectedImage ? (
+                <>
+                  <Image
+                    source={{ uri: selectedImage.uri }}
+                    className="w-full h-full rounded-lg"
+                    resizeMode="cover"
+                  />
+                  {/* Cancel Button on Original Image */}
+                  <TouchableOpacity
+                    onPress={() => setSelectedImage(null)}
+                    className="absolute top-2 right-2 bg-red-500 px-2 py-1 rounded-full flex-row items-center"
+                  >
+                    <Ionicons name="close" size={12} color="white" />
+                    <Text className="text-white text-xs font-semibold ml-1">
+                      Cancel
+                    </Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <TouchableOpacity
+                  onPress={pickImage}
+                  className="w-full h-full rounded-lg border-2 border-dashed border-gray-300 flex justify-center items-center"
+                >
+                  <Ionicons name="add" size={32} color="#9ca3af" />
+                  <Text className="text-gray-500 text-sm mt-2">Add Photo</Text>
+                </TouchableOpacity>
+              )}
             </View>
-          ) : (
-            <TouchableOpacity
-              onPress={pickImage}
-              className="bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-8 flex justify-center items-center"
-            >
-              <Text className="text-gray-600 text-lg text-center mb-2">
-                Tap to Select Photo
-              </Text>
-              <Text className="text-gray-500 text-sm text-center">
-                Choose a clear photo of yourself
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
+          </View>
 
-        {/* Generate Button */}
+          {/* Generated Image */}
+          <View className="w-[48%]">
+            <Text className="text-gray-700 text-sm font-semibold mb-2 text-center">
+              Professional Result
+            </Text>
+            <View className="aspect-[3/4] bg-white border border-gray-300 rounded-lg p-2 relative">
+              {generatedImage ? (
+                <>
+                  <Image
+                    source={{ uri: generatedImage.uri }}
+                    className="w-full h-full rounded-lg"
+                    resizeMode="cover"
+                  />
+                  {/* Save Button on Generated Image */}
+                  <TouchableOpacity
+                    onPress={saveImage}
+                    disabled={isSaving}
+                    className="absolute top-2 right-2 bg-green-500 px-2 py-1 rounded-full flex-row items-center"
+                  >
+                    <Ionicons
+                      name={isSaving ? "hourglass" : "download"}
+                      size={12}
+                      color="white"
+                    />
+                    <Text className="text-white text-xs font-semibold ml-1">
+                      {isSaving ? "..." : "Save"}
+                    </Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <View className="w-full h-full rounded-lg bg-gray-50 flex justify-center items-center">
+                  <Ionicons name="image-outline" size={32} color="#d1d5db" />
+                  <Text className="text-gray-400 text-sm mt-2">
+                    Result will appear here
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+        </View>
+      )}
+
+      {selectedImage && !generatedImage && (
         <TouchableOpacity
           onPress={generateHeadshot}
-          disabled={!selectedImage || isGenerating}
+          disabled={isGenerating}
           className={`rounded-lg p-4 w-full items-center mb-4 ${
-            selectedImage && !isGenerating ? "bg-blue-500" : "bg-gray-300"
+            isGenerating ? "bg-gray-300" : "bg-blue-500"
           }`}
         >
           <Text
             className={`font-bold text-lg ${
-              selectedImage && !isGenerating ? "text-white" : "text-gray-500"
+              isGenerating ? "text-gray-500" : "text-white"
             }`}
           >
-            {isGenerating ? "Generating..." : "Generate"}
+            {isGenerating ? "Generating..." : "Generate "}
           </Text>
         </TouchableOpacity>
+      )}
 
-        {/* Reset Button */}
+      {!selectedImage && !generatedImage && (
+        <View>
+          <TouchableOpacity
+            onPress={pickImage}
+            className="bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-8 flex justify-center items-center w-full max-w-sm"
+          >
+            <Ionicons name="person" size={48} color="#9ca3af" />
+            <Text className="text-gray-600 text-lg text-center mb-2 mt-4">
+              Select Your Photo
+            </Text>
+            <Text className="text-gray-500 text-sm text-center">
+              Choose a clear photo of yourself for professional headshot
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {(selectedImage || generatedImage) && (
         <TouchableOpacity
           onPress={resetAll}
-          className="bg-gray-200 rounded-lg p-3 w-full items-center"
+          className="bg-gray-200 rounded-lg p-3 w-full items-center mt-4 mb-2"
         >
           <Text className="text-gray-700 font-semibold">Reset All</Text>
         </TouchableOpacity>
-
-        {/* Generated Image Display */}
-        {generatedImage && (
-          <View className="mt-6">
-            <Text className="text-gray-700 text-lg font-semibold mb-3 text-center">
-              Before & After Comparison
-            </Text>
-
-            {/* Side by Side Layout */}
-            <View className="flex-row justify-between">
-              {/* Original Image */}
-              <View className="flex-1 mr-2">
-                <Text className="text-gray-600 text-sm font-medium mb-2 text-center">
-                  Original
-                </Text>
-                <View className="bg-white border border-gray-300 rounded-lg p-2">
-                  <Image
-                    source={{ uri: selectedImage?.uri }}
-                    className="w-full h-32 rounded-lg"
-                    resizeMode="contain"
-                  />
-                </View>
-              </View>
-
-              {/* Generated Image with Save Button */}
-              <View className="flex-1 ml-2">
-                <View className="bg-white border border-gray-300 rounded-lg p-2 relative">
-                  <Image
-                    source={{ uri: generatedImage.uri }}
-                    className="w-full h-32 rounded-lg"
-                    resizeMode="contain"
-                  />
-
-                  {/* Save Button */}
-                  <TouchableOpacity
-                    onPress={saveImage}
-                    disabled={isSaving}
-                    className="absolute bottom-2 right-2 bg-white/80 p-2 rounded-full border border-gray-300"
-                  >
-                    <Ionicons
-                      name={isSaving ? "hourglass" : "download"}
-                      size={16}
-                      color={isSaving ? "#3b82f6" : "#374151"}
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-          </View>
-        )}
-      </ScrollView>
+      )}
 
       {/* Loading Modal */}
       <LoadingModal
@@ -310,7 +359,7 @@ const ProfessionalHeadshot: React.FC<ProfessionalHeadshotProps> = ({
         animatedProgress={animatedProgress}
         progress={currentProgress}
       />
-    </View>
+    </SafeAreaView>
   );
 };
 
