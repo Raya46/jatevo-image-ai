@@ -1,3 +1,4 @@
+import HomeCanvas from "@/components/HomeCanvas";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
@@ -12,7 +13,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import HomeCanvas from "../components/HomeCanvas";
 import LoadingModal from "../components/LoadingModal";
 import Onboarding from "../components/Onboarding";
 import OutputGalleryWithDownload from "../components/OutputGalleryWithDownload";
@@ -196,17 +196,10 @@ const MainScreen = () => {
 
       case "prompt":
         return (
-          <ScrollView
-            className="flex-1"
-            contentContainerStyle={{ paddingBottom: 100 }}
-          >
-            <View className="p-4">
-              <PromptEngine
-                onGenerate={handleGenerateFromPrompt}
-                onReset={() => setLatestGeneratedImage(null)}
-              />
-            </View>
-          </ScrollView>
+          <PromptEngine
+            onGenerate={handleGenerateFromPrompt}
+            onReset={() => setLatestGeneratedImage(null)}
+          />
         );
 
       case "headshot":
