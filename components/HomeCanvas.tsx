@@ -106,23 +106,6 @@ const HomeCanvas: React.FC = () => {
 
   const sceneRef = useRef<View>(null);
 
-  const startProgressAnimation = () => {
-    animatedProgress.setValue(0);
-    RNAnimated.timing(animatedProgress, {
-      toValue: 90,
-      duration: 2500,
-      useNativeDriver: false,
-    }).start();
-  };
-
-  const completeProgressAnimation = () => {
-    RNAnimated.timing(animatedProgress, {
-      toValue: 100,
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
-  };
-
   const resetProgressAnimation = () => {
     setCurrentProgress(0);
     animatedProgress.setValue(0);
@@ -322,7 +305,7 @@ const HomeCanvas: React.FC = () => {
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#f8f9fa" }}>
       <SafeAreaView className="flex-1 bg-transparent items-center pt-5">
-        <View className="mx-4">
+        <View className="mx-4 mt-5">
           <Text className="text-gray-700 text-center">
             Drag the object image to scene image and see magic happen
           </Text>
