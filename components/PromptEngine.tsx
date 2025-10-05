@@ -40,7 +40,37 @@ const PromptEngine: React.FC<PromptEngineProps> = ({ onGenerate, onReset }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentProgress, setCurrentProgress] = useState(0);
+  const [showTemplates, setShowTemplates] = useState(false);
   const animatedProgress = useRef(new RNAnimated.Value(0)).current;
+
+  // Template prompts
+  const promptTemplates = [
+    {
+      name: "KURIHINGAN",
+      template:
+        "Create a hyper-realistic stylish poster with a [input your ratio... X:y] aspect ratio, featuring a [input your object...] hovering mid-separation above a cutting board; surrounding this central action, a chaotic whirlwind of kitchen utensils, vegetables, fruits,spices-spirals violently as if caught in a miniature tornado, with hyper-detailed, juicy splatters and water droplets frozen in motion, all illuminated by soft, volumetric daylight pouring in from a large window off-camera, creating a sense of depth and dimension with soft shadows and highlighting the textures, set against a softly lit, out-of-focus kitchen background, using a vibrant and naturally lit color palette dominated by the [input your object...]'s fresh hues contrasted with water and metallic accents, rendered in a sharp, photographic style with subtle motion blur to emphasize the dynamic yet naturally lit movement of the scene.",
+    },
+    {
+      name: "PORTRAIT PROFESSIONAL",
+      template:
+        "Professional headshot of a person, clean background, studio lighting, high resolution, business attire, confident expression, sharp focus, corporate style, neutral background, professional lighting, detailed facial features.",
+    },
+    {
+      name: "FANTASY LANDSCAPE",
+      template:
+        "Epic fantasy landscape with [terrain], mystical creatures in the distance, dramatic lighting with [time_of_day] hues, ancient ruins, magical elements, hyper-detailed, cinematic composition, vibrant colors, ethereal atmosphere.",
+    },
+    {
+      name: "CYBERPUNK CITY",
+      template:
+        "Cyberpunk cityscape at night, neon lights reflecting on wet streets, futuristic architecture, flying vehicles, dense urban environment, holographic advertisements, dramatic perspective, high contrast, cinematic lighting.",
+    },
+    {
+      name: "MINIMALIST DESIGN",
+      template:
+        "Minimalist [object] design, clean lines, negative space, monochromatic color scheme with [accent_color] accent, simple composition, elegant proportions, contemporary aesthetic, studio lighting, pure background.",
+    },
+  ];
 
   const startProgressAnimation = () => {
     animatedProgress.setValue(0);
@@ -62,6 +92,11 @@ const PromptEngine: React.FC<PromptEngineProps> = ({ onGenerate, onReset }) => {
   const resetProgressAnimation = () => {
     setCurrentProgress(0);
     animatedProgress.setValue(0);
+  };
+
+  const applyTemplate = (template: string) => {
+    setPrompt(template);
+    setShowTemplates(false);
   };
 
   const pickImage = async () => {
@@ -361,7 +396,40 @@ const PromptEngine: React.FC<PromptEngineProps> = ({ onGenerate, onReset }) => {
           )}
 
           <View className="mb-4">
-            <Text className="text-gray-600 mb-2 font-medium">Prompt</Text>
+            <View className="flex-row justify-between items-center mb-2">
+              <Text className="text-gray-600 font-medium">Prompt</Text>
+              <TouchableOpacity
+                onPress={() => setShowTemplates(!showTemplates)}
+                disabled={isGenerating}
+                className="bg-blue-100 px-3 py-1 rounded-full"
+              >
+                <Text className="text-blue-600 text-sm font-medium">
+                  {showTemplates ? "Hide Templates" : "Use Template"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {showTemplates && (
+              <View className="mb-3 max-h-32 overflow-y-auto">
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <View className="flex-row gap-2 pb-2">
+                    {promptTemplates.map((template, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        onPress={() => applyTemplate(template.template)}
+                        disabled={isGenerating}
+                        className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 min-w-[120px]"
+                      >
+                        <Text className="text-blue-700 text-xs font-medium text-center">
+                          {template.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </ScrollView>
+              </View>
+            )}
+
             <TextInput
               placeholder="Describe the image you want to generate..."
               className="bg-gray-50 text-gray-900 border border-gray-300 rounded-lg p-4 h-32 w-full text-base"
