@@ -14,15 +14,16 @@ export const CROP_MODES = [
 export const ADJUSTMENT_PRESETS = [
   "Blur Background",
   "Enhance Details",
-  "Warmer Lighting", 
+  "Warmer Lighting",
   "Studio Light",
 ];
 
 export const FILTER_PRESETS = [
   "Synthwave",
-  "Anime", 
+  "Anime",
   "Lomo",
-  "Glitch"
+  "Glitch",
+  "Magazine",
 ];
 
 export const MAX_IMAGES = 5;
