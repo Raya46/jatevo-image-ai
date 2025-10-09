@@ -4,8 +4,10 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
   Image,
+  KeyboardAvoidingView,
   Platform,
   Animated as RNAnimated,
+  ScrollView,
   Text,
   TouchableOpacity,
   View,
@@ -373,55 +375,70 @@ const QuickEditScreen: React.FC<ModifiedQuickEditScreenProps> = ({
         style={{ flex: 1, backgroundColor: "#f8f9fa" }}
         edges={["bottom", "left", "right"]}
       >
-        <View className="absolute top-0 left-0 right-0">
-          <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
-        </View>
-
-        <View
-          className="flex-1 items-center justify-center p-4"
-          style={{ paddingTop: 90 }}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          className="flex-1"
         >
-          {present?.uri ? (
-            <View className="items-center">
-              <Image
-                source={{ uri: present.uri }}
-                style={{ width: 250, height: 320 }}
-                resizeMode="contain"
-                onLayout={onImageLayout}
-              />
-              {activeTab === "crop" && imageLayout && (
-                <InteractiveCropView
-                  imageLayout={imageLayout}
-                  cropMode={cropMode}
-                  onCropRegionChange={setCropRegion}
-                />
+          <View className="absolute top-0 left-0 right-0 z-10">
+            <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
+          </View>
+
+          <ScrollView
+            className="flex-1"
+            contentContainerStyle={{ paddingBottom: 120 }}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View
+              className="flex-1 items-center justify-center p-4"
+              style={{ paddingTop: 90 }}
+            >
+              {present?.uri ? (
+                <View className="items-center">
+                  <Image
+                    source={{ uri: present.uri }}
+                    style={{ width: 250, height: 320 }}
+                    resizeMode="contain"
+                    onLayout={onImageLayout}
+                  />
+                  {activeTab === "crop" && imageLayout && (
+                    <InteractiveCropView
+                      imageLayout={imageLayout}
+                      cropMode={cropMode}
+                      onCropRegionChange={setCropRegion}
+                    />
+                  )}
+                </View>
+              ) : (
+                <TouchableOpacity
+                  onPress={onRePickImage}
+                  className="items-center"
+                >
+                  <Text className="text-gray-900 text-lg">
+                    Tap to select an image
+                  </Text>
+                </TouchableOpacity>
               )}
             </View>
-          ) : (
-            <TouchableOpacity onPress={onRePickImage} className="items-center">
-              <Text className="text-gray-900 text-lg">
-                Tap to select an image
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
 
-        <View className="bg-white/95 border-t border-gray-300">
-          {renderTabContent()}
-        </View>
+            <View className="bg-white/95 border-t border-gray-300">
+              {renderTabContent()}
+            </View>
+          </ScrollView>
 
-        <View className="absolute bottom-0 left-0 right-0">
-          <BottomActionBar
-            onUndo={undo}
-            onRedo={redo}
-            onReset={handleReset}
-            onNew={handleNew}
-            onSave={handleSave}
-            onCancel={handleCancel}
-            canUndo={canUndo}
-            canRedo={canRedo}
-          />
-        </View>
+          <View className="absolute bottom-0 left-0 right-0">
+            <BottomActionBar
+              onUndo={undo}
+              onRedo={redo}
+              onReset={handleReset}
+              onNew={handleNew}
+              onSave={handleSave}
+              onCancel={handleCancel}
+              canUndo={canUndo}
+              canRedo={canRedo}
+            />
+          </View>
+        </KeyboardAvoidingView>
 
         <LoadingModal
           visible={isSaving || isEditing}
