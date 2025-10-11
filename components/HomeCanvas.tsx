@@ -8,7 +8,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Animated as RNAnimated,
-  SafeAreaView,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -307,86 +306,82 @@ const HomeCanvas: React.FC = () => {
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#f8f9fa" }}>
-      <SafeAreaView className="flex-1 bg-transparent">
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        className="flex-1"
+      >
+        <ScrollView
           className="flex-1"
+          contentContainerStyle={{ paddingBottom: 100 }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          <ScrollView
-            className="flex-1"
-            contentContainerStyle={{ paddingBottom: 100 }}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            <View className="flex-1 items-center pt-5">
-              <View className="mx-4 mt-5">
-                <Text className="text-gray-700 text-center">
-                  Drag the object image to scene image and see magic happen
-                </Text>
-              </View>
-              <View className="flex-row justify-around w-full px-5 mt-10">
-                <ImageCard
-                  title="Object"
-                  image={objectImage}
-                  onSelect={() =>
-                    pickImage(setObjectImage, setOriginalObjectImage)
-                  }
-                  panGesture={objectImage ? panGesture : undefined}
-                />
-
-                <ImageCard
-                  ref={sceneRef}
-                  title="Scene"
-                  image={sceneImage}
-                  onSelect={() =>
-                    pickImage(setSceneImage, setOriginalSceneImage)
-                  }
-                  onLayout={() => {
-                    sceneRef.current?.measure(
-                      (
-                        x: number,
-                        y: number,
-                        width: number,
-                        height: number,
-                        pageX: number,
-                        pageY: number
-                      ) => {
-                        sceneLayout.current = {
-                          x: pageX,
-                          y: pageY,
-                          width,
-                          height,
-                        };
-                      }
-                    );
-                  }}
-                />
-              </View>
-
-              {hasEdited && (
-                <View className="w-full px-5 flex-row justify-around mt-10 mb-5">
-                  <TouchableOpacity
-                    onPress={handleReset}
-                    className="bg-gray-200 px-5 py-3 rounded-full flex-1 mr-2 items-center border border-gray-300"
-                  >
-                    <Text className="text-gray-800 text-center font-semibold">
-                      Reset
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={handleSave}
-                    className="bg-blue-500 px-5 py-3 rounded-full flex-1 ml-2 items-center"
-                  >
-                    <Text className="text-white text-center font-semibold">
-                      Save
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              )}
+          <View className="flex-1 items-center pt-5">
+            <View className="mx-4 mt-5">
+              <Text className="text-gray-700 text-center">
+                Drag the object image to scene image and see magic happen
+              </Text>
             </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
+            <View className="flex-row justify-around w-full px-5 mt-10">
+              <ImageCard
+                title="Object"
+                image={objectImage}
+                onSelect={() =>
+                  pickImage(setObjectImage, setOriginalObjectImage)
+                }
+                panGesture={objectImage ? panGesture : undefined}
+              />
+
+              <ImageCard
+                ref={sceneRef}
+                title="Scene"
+                image={sceneImage}
+                onSelect={() => pickImage(setSceneImage, setOriginalSceneImage)}
+                onLayout={() => {
+                  sceneRef.current?.measure(
+                    (
+                      x: number,
+                      y: number,
+                      width: number,
+                      height: number,
+                      pageX: number,
+                      pageY: number
+                    ) => {
+                      sceneLayout.current = {
+                        x: pageX,
+                        y: pageY,
+                        width,
+                        height,
+                      };
+                    }
+                  );
+                }}
+              />
+            </View>
+
+            {hasEdited && (
+              <View className="w-full px-5 flex-row justify-around mt-10 mb-5">
+                <TouchableOpacity
+                  onPress={handleReset}
+                  className="bg-gray-200 px-5 py-3 rounded-full flex-1 mr-2 items-center border border-gray-300"
+                >
+                  <Text className="text-gray-800 text-center font-semibold">
+                    Reset
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleSave}
+                  className="bg-blue-500 px-5 py-3 rounded-full flex-1 ml-2 items-center"
+                >
+                  <Text className="text-white text-center font-semibold">
+                    Save
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       <LoadingModal
         visible={isLoading || isSaving}

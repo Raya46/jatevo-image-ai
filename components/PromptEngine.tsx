@@ -16,7 +16,6 @@ import {
   View,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useAppContext } from "../contexts/AppContext";
 import { ImageAsset } from "../helper/QuickEdit/types";
 import { SupabaseImageServiceRN } from "../services/supabaseService";
@@ -101,6 +100,11 @@ const PromptEngine: React.FC<PromptEngineProps> = ({ onGenerate, onReset }) => {
       template:
         "Take the reference image(s) as a base and enhance/modify them by: [describe modifications]. Keep the core elements intact but apply the specified changes to create an improved or altered version.",
     },
+    {
+      name: "BASIC COMBINE",
+      template:
+        "Combine ALL the provided reference images into a single composite image. Merge the images together seamlessly, arranging them in a natural and aesthetically pleasing way. Create one unified image that incorporates all elements from the reference images without overlapping or creating disjointed scenes. The final result should look like a single cohesive image that naturally combines all the provided images.",
+    },
   ];
 
   const startProgressAnimation = () => {
@@ -152,7 +156,7 @@ const PromptEngine: React.FC<PromptEngineProps> = ({ onGenerate, onReset }) => {
         // Check file size (rough estimation)
         if (
           result.assets[0].base64 &&
-          result.assets[0].base64.length > 2000000
+          result.assets[0].base64.length > 20000000
         ) {
           // ~2MB
           Alert.alert(
@@ -345,252 +349,245 @@ const PromptEngine: React.FC<PromptEngineProps> = ({ onGenerate, onReset }) => {
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#f8f9fa" }}>
-      <SafeAreaView className="flex-1 bg-transparent">
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        className="flex-1"
+      >
+        <ScrollView
           className="flex-1"
+          contentContainerStyle={{ paddingBottom: 20 }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          <ScrollView
-            className="flex-1"
-            contentContainerStyle={{ paddingBottom: 20 }}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            {/* Generated Image Display */}
-            {previewImage ? (
-              <>
-                <View className="bg-white border border-gray-300 rounded-xl p-2 mx-4 mb-4">
-                  <Image
-                    source={{ uri: previewImage.uri }}
-                    className="w-full h-48 rounded-lg"
-                    resizeMode="contain"
-                  />
-                  <View className="flex-row justify-around w-full mt-3">
-                    <TouchableOpacity
-                      onPress={handleReset}
-                      className="bg-gray-200 px-4 py-2 rounded-full flex-1 mr-2 items-center border border-gray-300"
-                    >
-                      <Text className="text-gray-800 text-center font-semibold">
-                        Reset
+          {/* Generated Image Display */}
+          {previewImage ? (
+            <>
+              <View className="bg-white border border-gray-300 rounded-xl p-2 mx-4 mb-4">
+                <Image
+                  source={{ uri: previewImage.uri }}
+                  className="w-full h-48 rounded-lg"
+                  resizeMode="contain"
+                />
+                <View className="flex-row justify-around w-full mt-3">
+                  <TouchableOpacity
+                    onPress={handleReset}
+                    className="bg-gray-200 px-4 py-2 rounded-full flex-1 mr-2 items-center border border-gray-300"
+                  >
+                    <Text className="text-gray-800 text-center font-semibold">
+                      Reset
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={handleSave}
+                    className="bg-blue-500 px-4 py-2 rounded-full flex-1 ml-2 items-center"
+                  >
+                    <Text className="text-white text-center font-semibold">
+                      Save
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </>
+          ) : (
+            <View className="bg-gray-100 border border-gray-300 rounded-xl p-4 mb-4 mx-4">
+              <View className="flex justify-center items-center py-8">
+                <Ionicons name="image-outline" size={48} color="#9ca3af" />
+                <Text className="text-gray-600 text-lg font-medium mt-2">
+                  Your image will show here
+                </Text>
+                <Text className="text-gray-500 text-sm text-center mt-1">
+                  Generate an image using the prompt below
+                </Text>
+              </View>
+            </View>
+          )}
+
+          <View className="bg-white border border-gray-300 rounded-2xl p-4 mx-4">
+            <Text className="text-gray-900 text-xl font-bold mb-4">
+              Prompt Engine
+            </Text>
+
+            <View className="flex-row bg-gray-100 rounded-full mb-4 border border-gray-200">
+              <TouchableOpacity
+                onPress={() => {
+                  setEngineMode("text-to-image");
+                  setRefImages([]);
+                }}
+                className={`flex-1 p-3 rounded-full ${
+                  engineMode === "text-to-image" ? "bg-blue-500" : ""
+                }`}
+              >
+                <Text
+                  className={`text-center font-semibold text-sm ${
+                    engineMode === "text-to-image"
+                      ? "text-white"
+                      : "text-gray-700"
+                  }`}
+                >
+                  Text to Image
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setEngineMode("image-to-image")}
+                className={`flex-1 p-3 rounded-full ${
+                  engineMode === "image-to-image" ? "bg-blue-500" : ""
+                }`}
+              >
+                <Text
+                  className={`text-center font-semibold text-sm ${
+                    engineMode === "image-to-image"
+                      ? "text-white"
+                      : "text-gray-700"
+                  }`}
+                >
+                  Image to Image
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {engineMode === "image-to-image" && (
+              <View className="mb-4">
+                <View className="flex-row justify-between items-center mb-2">
+                  <Text className="text-gray-600 font-medium">
+                    Reference Images ({refImages.length}/9)
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      Alert.alert(
+                        "Image to Image Guide",
+                        "Add reference images to guide the AI. The AI will analyze your images and create a new one based on them and your prompt. For best results:\n• Use clear, high-quality images\n• Add 1-3 reference images\n• Be specific in your prompt about what to incorporate",
+                        [{ text: "Got it!" }]
+                      );
+                    }}
+                    className="bg-blue-100 px-2 py-1 rounded-full"
+                  >
+                    <Ionicons name="help-circle" size={14} color="#2563eb" />
+                  </TouchableOpacity>
+                </View>
+
+                {refImages.length === 0 && (
+                  <View className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                    <View className="flex-row items-center">
+                      <Ionicons
+                        name="information-circle"
+                        size={16}
+                        color="#2563eb"
+                      />
+                      <Text className="text-blue-700 text-xs ml-2 flex-1">
+                        Add at least one reference image to start. The AI will
+                        use it as inspiration.
                       </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={handleSave}
-                      className="bg-blue-500 px-4 py-2 rounded-full flex-1 ml-2 items-center"
-                    >
-                      <Text className="text-white text-center font-semibold">
-                        Save
-                      </Text>
-                    </TouchableOpacity>
+                    </View>
                   </View>
-                </View>
-              </>
-            ) : (
-              <View className="bg-gray-100 border border-gray-300 rounded-xl p-4 mb-4 mx-4">
-                <View className="flex justify-center items-center py-8">
-                  <Ionicons name="image-outline" size={48} color="#9ca3af" />
-                  <Text className="text-gray-600 text-lg font-medium mt-2">
-                    Your image will show here
-                  </Text>
-                  <Text className="text-gray-500 text-sm text-center mt-1">
-                    Generate an image using the prompt below
-                  </Text>
-                </View>
+                )}
+
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <View className="flex-row">
+                    {refImages.length < 9 && (
+                      <TouchableOpacity
+                        onPress={handleUploadRefImage}
+                        disabled={isGenerating}
+                        className="bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg h-20 w-20 flex justify-center items-center mr-3"
+                      >
+                        <Ionicons name="add" size={24} color="#6b7280" />
+                        <Text className="text-gray-500 text-xs mt-1">Add</Text>
+                      </TouchableOpacity>
+                    )}
+                    {refImages.map((image, index) => (
+                      <View key={index} className="relative mr-3">
+                        <Image
+                          source={{ uri: image.uri }}
+                          className="w-20 h-20 rounded-lg"
+                          resizeMode="cover"
+                        />
+                        <TouchableOpacity
+                          onPress={() => removeImage(index)}
+                          disabled={isGenerating}
+                          className="absolute -top-2 -right-2 bg-red-500 rounded-full w-6 h-6 flex justify-center items-center"
+                        >
+                          <Ionicons name="close" size={14} color="white" />
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </View>
+                </ScrollView>
               </View>
             )}
 
-            <View className="bg-white border border-gray-300 rounded-2xl p-4 mx-4">
-              <Text className="text-gray-900 text-xl font-bold mb-4">
-                Prompt Engine
-              </Text>
-
-              <View className="flex-row bg-gray-100 rounded-full mb-4 border border-gray-200">
+            <View className="mb-4">
+              <View className="flex-row justify-between items-center mb-2">
+                <Text className="text-gray-600 font-medium">Prompt</Text>
                 <TouchableOpacity
-                  onPress={() => {
-                    setEngineMode("text-to-image");
-                    setRefImages([]);
-                  }}
-                  className={`flex-1 p-3 rounded-full ${
-                    engineMode === "text-to-image" ? "bg-blue-500" : ""
-                  }`}
+                  onPress={() => setShowTemplates(!showTemplates)}
+                  disabled={isGenerating}
+                  className="bg-blue-100 px-3 py-1 rounded-full"
                 >
-                  <Text
-                    className={`text-center font-semibold text-sm ${
-                      engineMode === "text-to-image"
-                        ? "text-white"
-                        : "text-gray-700"
-                    }`}
-                  >
-                    Text to Image
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => setEngineMode("image-to-image")}
-                  className={`flex-1 p-3 rounded-full ${
-                    engineMode === "image-to-image" ? "bg-blue-500" : ""
-                  }`}
-                >
-                  <Text
-                    className={`text-center font-semibold text-sm ${
-                      engineMode === "image-to-image"
-                        ? "text-white"
-                        : "text-gray-700"
-                    }`}
-                  >
-                    Image to Image
+                  <Text className="text-blue-600 text-sm font-medium">
+                    {showTemplates ? "Hide Templates" : "Use Template"}
                   </Text>
                 </TouchableOpacity>
               </View>
 
-              {engineMode === "image-to-image" && (
-                <View className="mb-4">
-                  <View className="flex-row justify-between items-center mb-2">
-                    <Text className="text-gray-600 font-medium">
-                      Reference Images ({refImages.length}/9)
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => {
-                        Alert.alert(
-                          "Image to Image Guide",
-                          "Add reference images to guide the AI. The AI will analyze your images and create a new one based on them and your prompt. For best results:\n• Use clear, high-quality images\n• Add 1-3 reference images\n• Be specific in your prompt about what to incorporate",
-                          [{ text: "Got it!" }]
-                        );
-                      }}
-                      className="bg-blue-100 px-2 py-1 rounded-full"
-                    >
-                      <Ionicons name="help-circle" size={14} color="#2563eb" />
-                    </TouchableOpacity>
-                  </View>
-
-                  {refImages.length === 0 && (
-                    <View className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
-                      <View className="flex-row items-center">
-                        <Ionicons
-                          name="information-circle"
-                          size={16}
-                          color="#2563eb"
-                        />
-                        <Text className="text-blue-700 text-xs ml-2 flex-1">
-                          Add at least one reference image to start. The AI will
-                          use it as inspiration.
-                        </Text>
-                      </View>
-                    </View>
-                  )}
-
+              {showTemplates && (
+                <View className="mb-3 max-h-32 overflow-y-auto">
                   <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    <View className="flex-row">
-                      {refImages.length < 9 && (
+                    <View className="flex-row gap-2 pb-2">
+                      {(engineMode === "image-to-image"
+                        ? imageToImageTemplates
+                        : promptTemplates
+                      ).map((template, index) => (
                         <TouchableOpacity
-                          onPress={handleUploadRefImage}
+                          key={index}
+                          onPress={() => applyTemplate(template.template)}
                           disabled={isGenerating}
-                          className="bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg h-20 w-20 flex justify-center items-center mr-3"
+                          className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 min-w-[120px]"
                         >
-                          <Ionicons name="add" size={24} color="#6b7280" />
-                          <Text className="text-gray-500 text-xs mt-1">
-                            Add
+                          <Text className="text-blue-700 text-xs font-medium text-center">
+                            {template.name}
                           </Text>
                         </TouchableOpacity>
-                      )}
-                      {refImages.map((image, index) => (
-                        <View key={index} className="relative mr-3">
-                          <Image
-                            source={{ uri: image.uri }}
-                            className="w-20 h-20 rounded-lg"
-                            resizeMode="cover"
-                          />
-                          <TouchableOpacity
-                            onPress={() => removeImage(index)}
-                            disabled={isGenerating}
-                            className="absolute -top-2 -right-2 bg-red-500 rounded-full w-6 h-6 flex justify-center items-center"
-                          >
-                            <Ionicons name="close" size={14} color="white" />
-                          </TouchableOpacity>
-                        </View>
                       ))}
                     </View>
                   </ScrollView>
                 </View>
               )}
 
-              <View className="mb-4">
-                <View className="flex-row justify-between items-center mb-2">
-                  <Text className="text-gray-600 font-medium">Prompt</Text>
-                  <TouchableOpacity
-                    onPress={() => setShowTemplates(!showTemplates)}
-                    disabled={isGenerating}
-                    className="bg-blue-100 px-3 py-1 rounded-full"
-                  >
-                    <Text className="text-blue-600 text-sm font-medium">
-                      {showTemplates ? "Hide Templates" : "Use Template"}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+              <TextInput
+                placeholder={
+                  engineMode === "image-to-image"
+                    ? "Describe what you want to create based on your reference images..."
+                    : "Describe the image you want to generate..."
+                }
+                className="bg-gray-50 text-gray-900 border border-gray-300 rounded-lg p-4 h-32 w-full text-base"
+                value={prompt}
+                onChangeText={setPrompt}
+                multiline
+                placeholderTextColor="#9ca3af"
+                editable={!isGenerating}
+                textAlignVertical="top"
+              />
+            </View>
 
-                {showTemplates && (
-                  <View className="mb-3 max-h-32 overflow-y-auto">
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                    >
-                      <View className="flex-row gap-2 pb-2">
-                        {(engineMode === "image-to-image"
-                          ? imageToImageTemplates
-                          : promptTemplates
-                        ).map((template, index) => (
-                          <TouchableOpacity
-                            key={index}
-                            onPress={() => applyTemplate(template.template)}
-                            disabled={isGenerating}
-                            className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 min-w-[120px]"
-                          >
-                            <Text className="text-blue-700 text-xs font-medium text-center">
-                              {template.name}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-                    </ScrollView>
-                  </View>
-                )}
-
-                <TextInput
-                  placeholder={
-                    engineMode === "image-to-image"
-                      ? "Describe what you want to create based on your reference images..."
-                      : "Describe the image you want to generate..."
-                  }
-                  className="bg-gray-50 text-gray-900 border border-gray-300 rounded-lg p-4 h-32 w-full text-base"
-                  value={prompt}
-                  onChangeText={setPrompt}
-                  multiline
-                  placeholderTextColor="#9ca3af"
-                  editable={!isGenerating}
-                  textAlignVertical="top"
-                />
-              </View>
-
-              <TouchableOpacity
-                onPress={handleGenerate}
-                disabled={isGenerating || !prompt.trim()}
-                className={`rounded-full p-4 w-full items-center mb-4 ${
-                  isGenerating || !prompt.trim() ? "bg-gray-300" : "bg-blue-500"
+            <TouchableOpacity
+              onPress={handleGenerate}
+              disabled={isGenerating || !prompt.trim()}
+              className={`rounded-full p-4 w-full items-center mb-4 ${
+                isGenerating || !prompt.trim() ? "bg-gray-300" : "bg-blue-500"
+              }`}
+            >
+              <Text
+                className={`font-bold text-lg ${
+                  isGenerating || !prompt.trim()
+                    ? "text-gray-500"
+                    : "text-white"
                 }`}
               >
-                <Text
-                  className={`font-bold text-lg ${
-                    isGenerating || !prompt.trim()
-                      ? "text-gray-500"
-                      : "text-white"
-                  }`}
-                >
-                  {isGenerating ? "Generating..." : "Generate Image"}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
+                {isGenerating ? "Generating..." : "Generate Image"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
       <LoadingModal
         visible={isSaving}
         title="Saving to Gallery"
