@@ -14,7 +14,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { ImageAsset } from "../helper/QuickEdit/types";
 import { SupabaseImageServiceRN } from "../services/supabaseService";
 import LoadingModal from "./LoadingModal";
@@ -218,153 +217,151 @@ const ProfessionalHeadshot: React.FC<ProfessionalHeadshotProps> = ({
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      className="flex-1"
+    >
+      <ScrollView
         className="flex-1"
+        contentContainerStyle={{ paddingBottom: 20 }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        <ScrollView
-          className="flex-1"
-          contentContainerStyle={{ paddingBottom: 20 }}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View className="flex-1 items-center p-4">
-            {(selectedImage || generatedImage) && (
-              <View
-                className="flex-row justify-between mb-4"
-                style={{ minHeight: 300 }}
-              >
-                {/* Original Image */}
-                <View className="w-[48%]">
-                  <Text className="text-gray-700 text-sm font-semibold mb-2 text-center">
-                    Original Photo
-                  </Text>
-                  <View className="aspect-[3/4] bg-white border border-gray-300 rounded-lg p-2 relative">
-                    {selectedImage ? (
-                      <>
-                        <Image
-                          source={{ uri: selectedImage.uri }}
-                          className="w-full h-full rounded-lg"
-                          resizeMode="cover"
-                        />
-                        {/* Cancel Button on Original Image */}
-                        <TouchableOpacity
-                          onPress={() => setSelectedImage(null)}
-                          className="absolute top-2 right-2 bg-red-500 px-2 py-1 rounded-full flex-row items-center"
-                        >
-                          <Ionicons name="close" size={12} color="white" />
-                          <Text className="text-white text-xs font-semibold ml-1">
-                            Cancel
-                          </Text>
-                        </TouchableOpacity>
-                      </>
-                    ) : (
+        <View className="flex-1 items-center p-4">
+          {(selectedImage || generatedImage) && (
+            <View
+              className="flex-row justify-between mb-4"
+              style={{ minHeight: 300 }}
+            >
+              {/* Original Image */}
+              <View className="w-[48%]">
+                <Text className="text-gray-700 text-sm font-semibold mb-2 text-center">
+                  Original Photo
+                </Text>
+                <View className="aspect-[3/4] bg-white border border-gray-300 rounded-lg p-2 relative">
+                  {selectedImage ? (
+                    <>
+                      <Image
+                        source={{ uri: selectedImage.uri }}
+                        className="w-full h-full rounded-lg"
+                        resizeMode="cover"
+                      />
+                      {/* Cancel Button on Original Image */}
                       <TouchableOpacity
-                        onPress={pickImage}
-                        className="w-full h-full rounded-lg border-2 border-dashed border-gray-300 flex justify-center items-center"
+                        onPress={() => setSelectedImage(null)}
+                        className="absolute top-2 right-2 bg-red-500 px-2 py-1 rounded-full flex-row items-center"
                       >
-                        <Ionicons name="add" size={32} color="#9ca3af" />
-                        <Text className="text-gray-500 text-sm mt-2">
-                          Add Photo
+                        <Ionicons name="close" size={12} color="white" />
+                        <Text className="text-white text-xs font-semibold ml-1">
+                          Cancel
                         </Text>
                       </TouchableOpacity>
-                    )}
-                  </View>
-                </View>
-
-                {/* Generated Image */}
-                <View className="w-[48%]">
-                  <Text className="text-gray-700 text-sm font-semibold mb-2 text-center">
-                    Professional Result
-                  </Text>
-                  <View className="aspect-[3/4] bg-white border border-gray-300 rounded-lg p-2 relative">
-                    {generatedImage ? (
-                      <>
-                        <Image
-                          source={{ uri: generatedImage.uri }}
-                          className="w-full h-full rounded-lg"
-                          resizeMode="cover"
-                        />
-                        {/* Save Button on Generated Image */}
-                        <TouchableOpacity
-                          onPress={saveImage}
-                          disabled={isSaving}
-                          className="absolute top-2 right-2 bg-green-500 px-2 py-1 rounded-full flex-row items-center"
-                        >
-                          <Ionicons
-                            name={isSaving ? "hourglass" : "download"}
-                            size={12}
-                            color="white"
-                          />
-                          <Text className="text-white text-xs font-semibold ml-1">
-                            {isSaving ? "..." : "Save"}
-                          </Text>
-                        </TouchableOpacity>
-                      </>
-                    ) : (
-                      <View className="w-full h-full rounded-lg bg-gray-50 flex justify-center items-center">
-                        <Ionicons
-                          name="image-outline"
-                          size={32}
-                          color="#d1d5db"
-                        />
-                        <Text className="text-gray-400 text-sm mt-2">
-                          Result will appear here
-                        </Text>
-                      </View>
-                    )}
-                  </View>
+                    </>
+                  ) : (
+                    <TouchableOpacity
+                      onPress={pickImage}
+                      className="w-full h-full rounded-lg border-2 border-dashed border-gray-300 flex justify-center items-center"
+                    >
+                      <Ionicons name="add" size={32} color="#9ca3af" />
+                      <Text className="text-gray-500 text-sm mt-2">
+                        Add Photo
+                      </Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               </View>
-            )}
 
-            {selectedImage && !generatedImage && (
-              <TouchableOpacity
-                onPress={generateHeadshot}
-                disabled={isGenerating}
-                className={`rounded-lg p-4 w-full items-center mb-4 ${
-                  isGenerating ? "bg-gray-300" : "bg-blue-500"
+              {/* Generated Image */}
+              <View className="w-[48%]">
+                <Text className="text-gray-700 text-sm font-semibold mb-2 text-center">
+                  Professional Result
+                </Text>
+                <View className="aspect-[3/4] bg-white border border-gray-300 rounded-lg p-2 relative">
+                  {generatedImage ? (
+                    <>
+                      <Image
+                        source={{ uri: generatedImage.uri }}
+                        className="w-full h-full rounded-lg"
+                        resizeMode="cover"
+                      />
+                      {/* Save Button on Generated Image */}
+                      <TouchableOpacity
+                        onPress={saveImage}
+                        disabled={isSaving}
+                        className="absolute top-2 right-2 bg-green-500 px-2 py-1 rounded-full flex-row items-center"
+                      >
+                        <Ionicons
+                          name={isSaving ? "hourglass" : "download"}
+                          size={12}
+                          color="white"
+                        />
+                        <Text className="text-white text-xs font-semibold ml-1">
+                          {isSaving ? "..." : "Save"}
+                        </Text>
+                      </TouchableOpacity>
+                    </>
+                  ) : (
+                    <View className="w-full h-full rounded-lg bg-gray-50 flex justify-center items-center">
+                      <Ionicons
+                        name="image-outline"
+                        size={32}
+                        color="#d1d5db"
+                      />
+                      <Text className="text-gray-400 text-sm mt-2">
+                        Result will appear here
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+            </View>
+          )}
+
+          {selectedImage && !generatedImage && (
+            <TouchableOpacity
+              onPress={generateHeadshot}
+              disabled={isGenerating}
+              className={`rounded-lg p-4 w-full items-center mb-4 ${
+                isGenerating ? "bg-gray-300" : "bg-blue-500"
+              }`}
+            >
+              <Text
+                className={`font-bold text-lg ${
+                  isGenerating ? "text-gray-500" : "text-white"
                 }`}
               >
-                <Text
-                  className={`font-bold text-lg ${
-                    isGenerating ? "text-gray-500" : "text-white"
-                  }`}
-                >
-                  {isGenerating ? "Generating..." : "Generate "}
+                {isGenerating ? "Generating..." : "Generate "}
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {!selectedImage && !generatedImage && (
+            <View>
+              <TouchableOpacity
+                onPress={pickImage}
+                className="bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-8 flex justify-center items-center w-full max-w-sm"
+              >
+                <Ionicons name="person" size={48} color="#9ca3af" />
+                <Text className="text-gray-600 text-lg text-center mb-2 mt-4">
+                  Select Your Photo
+                </Text>
+                <Text className="text-gray-500 text-sm text-center">
+                  Choose a clear photo of yourself for professional headshot
                 </Text>
               </TouchableOpacity>
-            )}
+            </View>
+          )}
 
-            {!selectedImage && !generatedImage && (
-              <View>
-                <TouchableOpacity
-                  onPress={pickImage}
-                  className="bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-8 flex justify-center items-center w-full max-w-sm"
-                >
-                  <Ionicons name="person" size={48} color="#9ca3af" />
-                  <Text className="text-gray-600 text-lg text-center mb-2 mt-4">
-                    Select Your Photo
-                  </Text>
-                  <Text className="text-gray-500 text-sm text-center">
-                    Choose a clear photo of yourself for professional headshot
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {(selectedImage || generatedImage) && (
-              <TouchableOpacity
-                onPress={resetAll}
-                className="bg-gray-200 rounded-lg p-3 w-full items-center mt-4 mb-2"
-              >
-                <Text className="text-gray-700 font-semibold">Reset All</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+          {(selectedImage || generatedImage) && (
+            <TouchableOpacity
+              onPress={resetAll}
+              className="bg-gray-200 rounded-lg p-3 w-full items-center mt-4 mb-2"
+            >
+              <Text className="text-gray-700 font-semibold">Reset All</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </ScrollView>
 
       {/* Loading Modal */}
       <LoadingModal
@@ -382,7 +379,7 @@ const ProfessionalHeadshot: React.FC<ProfessionalHeadshotProps> = ({
         animatedProgress={animatedProgress}
         progress={currentProgress}
       />
-    </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 };
 
