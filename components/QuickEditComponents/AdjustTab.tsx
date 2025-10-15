@@ -1,5 +1,11 @@
 import React, { useState } from "react";
-import { Text, TextInput, TouchableOpacity, View } from "react-native";
+import {
+  Keyboard,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { ADJUSTMENT_PRESETS } from "../../helper/QuickEdit/constants";
 import { TabProps } from "../../helper/QuickEdit/types";
 
@@ -16,6 +22,7 @@ const AdjustTab: React.FC<TabProps> = ({
 
     const adjustment = customPrompt.trim() || selectedPreset;
     if (adjustment) {
+      Keyboard.dismiss();
       onImageEdit("adjust", quickEditImage.uri, adjustment, false);
     }
   };
@@ -34,7 +41,7 @@ const AdjustTab: React.FC<TabProps> = ({
     quickEditImage && !isLoading && (selectedPreset || customPrompt.trim());
 
   return (
-    <View className="px-4 py-6">
+    <View className="px-4 py-1">
       <View className="flex-row flex-wrap justify-center mb-4">
         {ADJUSTMENT_PRESETS.map((preset) => (
           <TouchableOpacity
@@ -62,6 +69,9 @@ const AdjustTab: React.FC<TabProps> = ({
           value={customPrompt}
           onChangeText={handleCustomInput}
           placeholderTextColor="#9ca3af"
+          returnKeyType="done"
+          blurOnSubmit
+          onSubmitEditing={handleExecuteAdjust}
         />
         <TouchableOpacity
           onPress={handleExecuteAdjust}

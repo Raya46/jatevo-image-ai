@@ -6,10 +6,14 @@ import React, { useRef, useState } from "react";
 import {
   Alert,
   Animated,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   RefreshControl,
   ScrollView,
   Text,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -225,53 +229,75 @@ const MainScreen = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
-      {/* Header */}
-      <View className="p-4 border-b border-gray-300">
-        <Text className="text-gray-900 text-3xl font-bold text-center mb-2">
-          JATEVO IMAGE GEN
-        </Text>
-
-        {/* Horizontal Tabs */}
-        <View className="flex-row bg-white border border-gray-200 rounded-full p-1 mt-4">
-          {[
-            { id: "gallery" as TabType, label: "Gallery", icon: "images" },
-            { id: "headshot" as TabType, label: "Shot", icon: "person" },
-            { id: "edit" as TabType, label: "Edit", icon: "create" },
-            { id: "prompt" as TabType, label: "Prompt", icon: "sparkles" },
-            { id: "canvas" as TabType, label: "Canvas", icon: "color-palette" },
-          ].map((tab) => (
-            <TouchableOpacity
-              key={tab.id}
-              onPress={() => setActiveTab(tab.id)}
-              className={`flex-1 flex-row items-center justify-center p-3 rounded-full ${
-                activeTab === tab.id ? "bg-blue-500" : ""
-              }`}
-            >
-              <Ionicons
-                name={tab.icon as any}
-                size={16}
-                color={activeTab === tab.id ? "white" : "#6b7280"}
-              />
-              <Text
-                className={`ml-2 font-semibold text-sm ${
-                  activeTab === tab.id ? "text-white" : "text-gray-600"
-                }`}
-              >
-                {tab.label}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+        style={{ flex: 1 }}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={{ flex: 1 }}>
+            {/* Header */}
+            <View className="p-4 border-b border-gray-300">
+              <Text className="text-gray-900 text-3xl font-bold text-center mb-2">
+                JATEVO IMAGE GEN
               </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
 
-      {/* Tab Content */}
-      <View className="flex-1">{renderTabContent()}</View>
+              {/* Horizontal Tabs */}
+              <View className="flex-row bg-white border border-gray-200 rounded-full p-1 mt-4">
+                {[
+                  {
+                    id: "gallery" as TabType,
+                    label: "Gallery",
+                    icon: "images",
+                  },
+                  { id: "headshot" as TabType, label: "Shot", icon: "person" },
+                  { id: "edit" as TabType, label: "Edit", icon: "create" },
+                  {
+                    id: "prompt" as TabType,
+                    label: "Prompt",
+                    icon: "sparkles",
+                  },
+                  {
+                    id: "canvas" as TabType,
+                    label: "Canvas",
+                    icon: "color-palette",
+                  },
+                ].map((tab) => (
+                  <TouchableOpacity
+                    key={tab.id}
+                    onPress={() => setActiveTab(tab.id)}
+                    className={`flex-1 flex-row items-center justify-center p-3 rounded-full ${
+                      activeTab === tab.id ? "bg-blue-500" : ""
+                    }`}
+                  >
+                    <Ionicons
+                      name={tab.icon as any}
+                      size={16}
+                      color={activeTab === tab.id ? "white" : "#6b7280"}
+                    />
+                    <Text
+                      className={`ml-2 font-semibold text-sm ${
+                        activeTab === tab.id ? "text-white" : "text-gray-600"
+                      }`}
+                    >
+                      {tab.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
 
-      {/* Loading Modal */}
-      <LoadingModal
-        visible={isGenerating}
-        animatedProgress={animatedProgress}
-      />
+            {/* Tab Content */}
+            <View className="flex-1">{renderTabContent()}</View>
+
+            {/* Loading Modal */}
+            <LoadingModal
+              visible={isGenerating}
+              animatedProgress={animatedProgress}
+            />
+          </View>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };

@@ -1,19 +1,11 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   Keyboard,
-  Platform,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { RetouchTabProps } from "../../helper/QuickEdit/types";
 
 const RetouchTab: React.FC<RetouchTabProps> = ({
@@ -22,27 +14,7 @@ const RetouchTab: React.FC<RetouchTabProps> = ({
   isLoading,
 }) => {
   const [prompt, setPrompt] = useState("");
-  const [kbHeight, setKbHeight] = useState(0);
   const inputRef = useRef<TextInput>(null);
-  const insets = useSafeAreaInsets();
-
-  useEffect(() => {
-    const showEvt =
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvt =
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
-
-    const subShow = Keyboard.addListener(showEvt, (e) => {
-      const h = e?.endCoordinates?.height ?? 0;
-      setKbHeight(h);
-    });
-    const subHide = Keyboard.addListener(hideEvt, () => setKbHeight(0));
-
-    return () => {
-      subShow.remove();
-      subHide.remove();
-    };
-  }, []);
 
   const canExecute = useMemo(
     () => !!quickEditImage && !!prompt.trim() && !isLoading,
@@ -59,25 +31,21 @@ const RetouchTab: React.FC<RetouchTabProps> = ({
     onImageEdit("adjust", quickEditImage.uri, prompt.trim(), false);
   }, [canExecute, quickEditImage, onImageEdit, prompt]);
 
-  // Use bottom inset to avoid double-padding on devices with a home indicator
-  const bottomSpacer = Math.max(0, kbHeight - insets.bottom);
-
   return (
-    <View
-      style={{ paddingBottom: insets.bottom, marginBottom: bottomSpacer }}
-      className="p-4"
-    >
+    <View className="px-4 py-1">
       <View className="flex-row gap-4 items-center">
         <TextInput
           ref={inputRef}
           placeholder="e.g., remove the person in the back"
-          className="bg-gray-50 text-gray-900 border border-gray-300 rounded-lg p-3 text-base flex-1"
+          className="bg-gray-50 text-gray-900 border border-gray-300 rounded-lg p-3 text-base flex-1 max-h-20"
           value={prompt}
           onChangeText={setPrompt}
           placeholderTextColor="#9ca3af"
           returnKeyType="done"
           blurOnSubmit
           onSubmitEditing={handleExecuteEdit}
+          multiline
+          textAlignVertical="top"
         />
         <TouchableOpacity
           onPress={handleExecuteEdit}
