@@ -1,5 +1,11 @@
 import React, { useState } from "react";
-import { Text, TextInput, TouchableOpacity, View } from "react-native";
+import {
+  Keyboard,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { FILTER_PRESETS } from "../../helper/QuickEdit/constants";
 import { TabProps } from "../../helper/QuickEdit/types";
 
@@ -16,6 +22,7 @@ const FiltersTab: React.FC<TabProps> = ({
 
     const filter = customPrompt.trim() || selectedFilter;
     if (filter) {
+      Keyboard.dismiss();
       onImageEdit("filter", quickEditImage.uri, filter, false);
     }
   };
@@ -34,7 +41,7 @@ const FiltersTab: React.FC<TabProps> = ({
     quickEditImage && !isLoading && (selectedFilter || customPrompt.trim());
 
   return (
-    <View className="px-4 py-6">
+    <View className="px-4 py-1">
       <View className="flex-row justify-center gap-2 mb-4">
         {FILTER_PRESETS.map((filter) => (
           <TouchableOpacity
@@ -62,6 +69,9 @@ const FiltersTab: React.FC<TabProps> = ({
           value={customPrompt}
           onChangeText={handleCustomInput}
           placeholderTextColor="#9ca3af"
+          returnKeyType="done"
+          blurOnSubmit
+          onSubmitEditing={handleExecuteFilter}
         />
         <TouchableOpacity
           onPress={handleExecuteFilter}

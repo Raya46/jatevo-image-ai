@@ -4,12 +4,14 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
   Image,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Animated as RNAnimated,
   ScrollView,
   Text,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -370,67 +372,71 @@ const QuickEditScreen: React.FC<ModifiedQuickEditScreenProps> = ({
     <GestureHandlerRootView style={{ flex: 1 }}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        className="flex-1"
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+        style={{ flex: 1 }}
       >
-        <View className="absolute top-0 left-0 right-0 z-10">
-          <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
-        </View>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={{ flex: 1 }}>
+            <View className="absolute top-0 left-0 right-0 z-10">
+              <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
+            </View>
 
-        <ScrollView
-          className="flex-1"
-          contentContainerStyle={{ paddingBottom: 120 }}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View
-            className="flex-1 items-center justify-center p-4"
-            style={{ paddingTop: 90 }}
-          >
-            {present?.uri ? (
-              <View className="items-center">
-                <Image
-                  source={{ uri: present.uri }}
-                  style={{ width: 250, height: 320 }}
-                  resizeMode="contain"
-                  onLayout={onImageLayout}
-                />
-                {activeTab === "crop" && imageLayout && (
-                  <InteractiveCropView
-                    imageLayout={imageLayout}
-                    cropMode={cropMode}
-                    onCropRegionChange={setCropRegion}
-                  />
+            <ScrollView
+              className="flex-1"
+              contentContainerStyle={{ paddingBottom: 160 }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              <View
+                className="flex-1 items-center justify-center p-4"
+                style={{ paddingTop: 90, minHeight: 400 }}
+              >
+                {present?.uri ? (
+                  <View className="items-center">
+                    <Image
+                      source={{ uri: present.uri }}
+                      style={{ width: 250, height: 320 }}
+                      resizeMode="contain"
+                      onLayout={onImageLayout}
+                    />
+                    {activeTab === "crop" && imageLayout && (
+                      <InteractiveCropView
+                        imageLayout={imageLayout}
+                        cropMode={cropMode}
+                        onCropRegionChange={setCropRegion}
+                      />
+                    )}
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    onPress={onRePickImage}
+                    className="items-center"
+                  >
+                    <Text className="text-gray-900 text-lg">
+                      Tap to select an image
+                    </Text>
+                  </TouchableOpacity>
                 )}
               </View>
-            ) : (
-              <TouchableOpacity
-                onPress={onRePickImage}
-                className="items-center"
-              >
-                <Text className="text-gray-900 text-lg">
-                  Tap to select an image
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
+            </ScrollView>
 
-          <View className="bg-white/95 border-t border-gray-300">
-            {renderTabContent()}
+            <View className="bg-white border-t border-gray-300">
+              <View className="bg-white/95 border-t border-gray-300">
+                {renderTabContent()}
+              </View>
+              <BottomActionBar
+                onUndo={undo}
+                onRedo={redo}
+                onReset={handleReset}
+                onNew={handleNew}
+                onSave={handleSave}
+                onCancel={handleCancel}
+                canUndo={canUndo}
+                canRedo={canRedo}
+              />
+            </View>
           </View>
-        </ScrollView>
-
-        <View className="absolute bottom-0 left-0 right-0">
-          <BottomActionBar
-            onUndo={undo}
-            onRedo={redo}
-            onReset={handleReset}
-            onNew={handleNew}
-            onSave={handleSave}
-            onCancel={handleCancel}
-            canUndo={canUndo}
-            canRedo={canRedo}
-          />
-        </View>
+        </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
 
       <LoadingModal
