@@ -107,7 +107,7 @@ const ProfessionalHeadshot: React.FC<ProfessionalHeadshotProps> = ({
 
     try {
       // Default system prompt for professional headshot generation with professional background
-      const systemPrompt = `Create a highly realistic, super HD professional headshot photo. The person MUST be wearing formal professional attire such as a suit, tuxedo, dress shirt with tie, or other business-appropriate clothing. Transform the person into a professional headshot with perfect lighting, ultra-realistic details, professional quality, and natural appearance. Replace the background with a clean, professional studio background such as a solid color backdrop (white, gray, or blue), office setting, or conference room. Generate in 3:4 aspect ratio, photorealistic quality, 8K resolution, perfect skin texture, natural lighting, and professional appearance.`;
+      const systemPrompt = `A ultra-realistic official portrait of a professional individual wearing a black suit. Creating an elegant and refined aesthetic, with sharp and well-defined facial features. The portrait is maintain captured in 4k resolution and studio-lit finish. The background is plain white, overall define an confidence and professionalism.`;
 
       const result = await onGenerate(
         systemPrompt,
