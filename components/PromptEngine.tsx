@@ -82,60 +82,14 @@ const PromptEngine: React.FC<PromptEngineProps> = ({ onGenerate, onReset }) => {
         "Create a hyper-realistic stylish poster with a [input your ratio... X:y] aspect ratio, featuring a [input your object...] hovering mid-separation above a cutting board; surrounding this central action, a chaotic whirlwind of kitchen utensils, vegetables, fruits,spices-spirals violently as if caught in a miniature tornado, with hyper-detailed, juicy splatters and water droplets frozen in motion, all illuminated by soft, volumetric daylight pouring in from a large window off-camera, creating a sense of depth and dimension with soft shadows and highlighting the textures, set against a softly lit, out-of-focus kitchen background, using a vibrant and naturally lit color palette dominated by the [input your object...]'s fresh hues contrasted with water and metallic accents, rendered in a sharp, photographic style with subtle motion blur to emphasize the dynamic yet naturally lit movement of the scene.",
     },
     {
-      name: "PORTRAIT PROFESSIONAL",
+      name: "Rumah BUMN Banjarmasin",
       template:
-        "Professional headshot of a person, clean background, studio lighting, high resolution, business attire, confident expression, sharp focus, corporate style, neutral background, professional lighting, detailed facial features.",
-    },
-    {
-      name: "FANTASY LANDSCAPE",
-      template:
-        "Epic fantasy landscape with [terrain], mystical creatures in the distance, dramatic lighting with [time_of_day] hues, ancient ruins, magical elements, hyper-detailed, cinematic composition, vibrant colors, ethereal atmosphere.",
-    },
-    {
-      name: "CYBERPUNK CITY",
-      template:
-        "Cyberpunk cityscape at night, neon lights reflecting on wet streets, futuristic architecture, flying vehicles, dense urban environment, holographic advertisements, dramatic perspective, high contrast, cinematic lighting.",
-    },
-    {
-      name: "MINIMALIST DESIGN",
-      template:
-        "Minimalist [object] design, clean lines, negative space, monochromatic color scheme with [accent_color] accent, simple composition, elegant proportions, contemporary aesthetic, studio lighting, pure background.",
+        "Analyze my product (images) photo and upgrade it to a magazine worthy shot. Auto-add props, adjust lighting, and select the best background based on the dish's style. Make it look luxurious.",
     },
   ];
 
   // Image-to-image specific templates
-  const imageToImageTemplates = [
-    {
-      name: "STYLE TRANSFER",
-      template:
-        "Create a new image that incorporates the artistic style and visual elements from the reference image(s), but with this subject: [describe your subject]. Maintain the color palette, brush techniques, and overall aesthetic from the reference while applying it to your subject.",
-    },
-    {
-      name: "COMPOSITION RECREATE",
-      template:
-        "Recreate the composition and layout from the reference image(s) but with this subject: [describe your subject]. Keep similar positioning, angles, and visual flow, but replace the main elements with your specified subject.",
-    },
-    {
-      name: "COLOR & MOOD",
-      template:
-        "Create an image with the same color scheme and mood as the reference image(s), but featuring: [describe your subject]. Focus on preserving the emotional tone and atmospheric qualities while changing the main subject.",
-    },
-    {
-      name: "ELEMENTS COMBINE",
-      template:
-        "Combine key visual elements from the reference image(s) with these new elements: [describe additional elements]. Create a harmonious blend that incorporates both the reference characteristics and your specified additions.",
-    },
-    {
-      name: "ENHANCE & MODIFY",
-      template:
-        "Take the reference image(s) as a base and enhance/modify them by: [describe modifications]. Keep the core elements intact but apply the specified changes to create an improved or altered version.",
-    },
-    {
-      name: "BASIC COMBINE",
-      template:
-        "Combine ALL the provided reference images into a single composite image. Merge the images together seamlessly, arranging them in a natural and aesthetically pleasing way. Create one unified image that incorporates all elements from the reference images without overlapping or creating disjointed scenes. The final result should look like a single cohesive image that naturally combines all the provided images.",
-    },
-  ];
+  const imageToImageTemplates: any[] = [];
 
   const startProgressAnimation = () => {
     animatedProgress.setValue(0);
