@@ -74,8 +74,32 @@ const PromptEngine: React.FC<PromptEngineProps> = ({ onGenerate, onReset }) => {
     };
   }, []);
 
-  // Template prompts
+  // Template prompts for text-to-image
   const promptTemplates = [
+    {
+      name: "PORTRAIT PROFESSIONAL",
+      template:
+        "Professional headshot of a person, clean background, studio lighting, high resolution, business attire, confident expression, sharp focus, corporate style, neutral background, professional lighting, detailed facial features.",
+    },
+    {
+      name: "FANTASY LANDSCAPE",
+      template:
+        "Epic fantasy landscape with [terrain], mystical creatures in the distance, dramatic lighting with [time_of_day] hues, ancient ruins, magical elements, hyper-detailed, cinematic composition, vibrant colors, ethereal atmosphere.",
+    },
+    {
+      name: "CYBERPUNK CITY",
+      template:
+        "Cyberpunk cityscape at night, neon lights reflecting on wet streets, futuristic architecture, flying vehicles, dense urban environment, holographic advertisements, dramatic perspective, high contrast, cinematic lighting.",
+    },
+    {
+      name: "MINIMALIST DESIGN",
+      template:
+        "Minimalist [object] design, clean lines, negative space, monochromatic color scheme with [accent_color] accent, simple composition, elegant proportions, contemporary aesthetic, studio lighting, pure background.",
+    },
+  ];
+
+  // Image-to-image specific templates
+  const imageToImageTemplates = [
     {
       name: "KURIHINGAN",
       template:
@@ -87,9 +111,6 @@ const PromptEngine: React.FC<PromptEngineProps> = ({ onGenerate, onReset }) => {
         "Analyze my product (images) photo and upgrade it to a magazine worthy shot. Auto-add props, adjust lighting, and select the best background based on the dish's style. Make it look luxurious.",
     },
   ];
-
-  // Image-to-image specific templates
-  const imageToImageTemplates: any[] = [];
 
   const startProgressAnimation = () => {
     animatedProgress.setValue(0);
